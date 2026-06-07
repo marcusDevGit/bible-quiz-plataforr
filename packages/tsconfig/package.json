@@ -1,0 +1,12 @@
+{
+  "name": "@bible-quiz/tsconfig",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Configuração básica compartilhada do TypeScript",
+  "files": [
+    "base.json"
+  ],
+  "exports": {
+    "./base.json": "./base.json"
+  }
+}

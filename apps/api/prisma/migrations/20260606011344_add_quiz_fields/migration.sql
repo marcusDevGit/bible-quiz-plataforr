@@ -1,0 +1,9 @@
+-- AlterTable
+ALTER TABLE "questions" ADD COLUMN     "average_answer_time" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+ADD COLUMN     "correct_rate" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+ADD COLUMN     "difficulty_score" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "explanation" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "reference" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "tags" TEXT[] DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN     "times_played" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "xp_reward" INTEGER NOT NULL DEFAULT 0;

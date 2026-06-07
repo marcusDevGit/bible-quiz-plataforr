@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  avatar    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  ranking          Ranking?
+  matchesAsPlayer1 Match[]           @relation("PlayerOne")
+  matchesAsPlayer2 Match[]           @relation("PlayerTwo")
+  achievements     UserAchievement[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  questions Question[]
+
+  @@map("categories")
+}
+
+model Question {
+  id              String     @id @default(uuid())
+  title           String
+  difficulty      Difficulty
+  categoryId      String     @map("category_id")
+  reference       String     @default("") @map("reference")
+  explanation     String     @default("") @map("explanation")
+  xpReward        Int        @default(0) @map("xp_reward")
+  difficultyScore Int        @default(0) @map("difficulty_score")
+  tags            String[]   @default([])
+
+  timesPlayed       Int   @default(0) @map("times_played")
+  correctRate       Float @default(0.0) @map("correct_rate")
+  averageAnswerTime Float @default(0.0) @map("average_answer_time")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  alternatives Alternative[]
+
+  @@map("questions")
+}
+
+model Alternative {
+  id          String   @id @default(uuid())
+  questionId  String   @map("question_id")
+  description String
+  isCorrect   Boolean  @map("is_correct")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("alternatives")
+}
+
+model Match {
+  id        String   @id @default(uuid())
+  playerOne String   @map("player_one")
+  playerTwo String?  @map("player_two")
+  winner    String?
+  score     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  p1 User  @relation("PlayerOne", fields: [playerOne], references: [id])
+  p2 User? @relation("PlayerTwo", fields: [playerTwo], references: [id])
+
+  @@map("matches")
+}
+
+model Ranking {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  points    Int      @default(0)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ranking")
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String
+  icon        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  achievementId String   @map("achievement_id")
+  unlockedAt    DateTime @default(now()) @map("unlocked_at")
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}

@@ -1,0 +1,10 @@
+node_modules
+.env
+.bun
+.idea
+.vscode
+.turbo/
+dist/
+.agents/
+.ia/
+bible-quest-Design/

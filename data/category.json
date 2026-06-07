@@ -1,0 +1,39 @@
+{
+"categories": [
+{
+"id": "evangelhos",
+"name": "Evangelhos",
+"description": "Perguntas relacionadas aos Evangelhos."
+},
+{
+"id": "antigo-testamento",
+"name": "Antigo Testamento",
+"description": "Perguntas relacionadas ao Antigo Testamento."
+},
+{
+"id": "novo-testamento",
+"name": "Novo Testamento",
+"description": "Perguntas relacionadas ao Novo Testamento."
+},
+{
+"id": "profetas",
+"name": "Profetas",
+"description": "Perguntas sobre os profetas bíblicos."
+},
+{
+"id": "apostolos",
+"name": "Apóstolos",
+"description": "Perguntas sobre os apóstolos."
+},
+{
+"id": "milagres",
+"name": "Milagres",
+"description": "Perguntas sobre milagres bíblicos."
+},
+{
+"id": "personagens",
+"name": "Personagens Bíblicos",
+"description": "Perguntas sobre personagens bíblicos."
+}
+]
+}

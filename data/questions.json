@@ -1,0 +1,852 @@
+[
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789001",
+    "category": "Pentateuco",
+    "difficulty": "EASY",
+    "question": "Deus criou o mundo em quantos dias, descansando no seguinte?",
+    "alternatives": [
+      { "id": "a", "description": "6 dias", "isCorrect": true },
+      { "id": "b", "description": "7 dias", "isCorrect": false },
+      { "id": "c", "description": "3 dias", "isCorrect": false }
+    ],
+    "reference": "Gênesis 1:31-2:2",
+    "explanation": "Deus concluiu a obra da criação em 6 dias e descansou no sétimo dia.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["criacao", "deus", "genesis"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789002",
+    "category": "Patriarcas",
+    "difficulty": "EASY",
+    "question": "Quem foi instruído por Deus a construir uma arca?",
+    "alternatives": [
+      { "id": "a", "description": "Moisés", "isCorrect": false },
+      { "id": "b", "description": "Abraão", "isCorrect": false },
+      { "id": "c", "description": "Noé", "isCorrect": true }
+    ],
+    "reference": "Gênesis 6:13-14",
+    "explanation": "Deus mandou Noé construir uma arca para salvar sua família e os animais do dilúvio.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["arca", "diluvio", "noe"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789003",
+    "category": "Patriarcas",
+    "difficulty": "MEDIUM",
+    "question": "Qual era o nome do filho da promessa de Abraão e Sara?",
+    "alternatives": [
+      { "id": "a", "description": "Ismael", "isCorrect": false },
+      { "id": "b", "description": "Isaque", "isCorrect": true },
+      { "id": "c", "description": "Jacó", "isCorrect": false }
+    ],
+    "reference": "Gênesis 21:3",
+    "explanation": "Isaque foi o filho que nasceu de Abraão e Sara em sua velhice, cumprindo a promessa de Deus.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["abraao", "isaque", "promessa"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789004",
+    "category": "Pentateuco",
+    "difficulty": "EASY",
+    "question": "Quem liderou o povo de Israel na saída do Egito?",
+    "alternatives": [
+      { "id": "a", "description": "Moisés", "isCorrect": true },
+      { "id": "b", "description": "Josué", "isCorrect": false },
+      { "id": "c", "description": "Arão", "isCorrect": false }
+    ],
+    "reference": "Êxodo 3:10",
+    "explanation": "Deus chamou Moisés para libertar o povo de Israel da escravidão no Egito.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["moises", "egito", "exodo"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789005",
+    "category": "Reis",
+    "difficulty": "EASY",
+    "question": "Quem derrotou o gigante Golias com uma funda e uma pedra?",
+    "alternatives": [
+      { "id": "a", "description": "Saul", "isCorrect": false },
+      { "id": "b", "description": "Salomão", "isCorrect": false },
+      { "id": "c", "description": "Davi", "isCorrect": true }
+    ],
+    "reference": "1 Samuel 17:49",
+    "explanation": "Davi, ainda jovem, derrotou o guerreiro filisteu Golias confiando no Senhor.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["davi", "golias", "batalha"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789006",
+    "category": "Reis",
+    "difficulty": "MEDIUM",
+    "question": "Qual rei pediu sabedoria a Deus para governar o povo?",
+    "alternatives": [
+      { "id": "a", "description": "Davi", "isCorrect": false },
+      { "id": "b", "description": "Salomão", "isCorrect": true },
+      { "id": "c", "description": "Josias", "isCorrect": false }
+    ],
+    "reference": "1 Reis 3:9",
+    "explanation": "Salomão pediu a Deus um coração compreensivo para julgar o povo com sabedoria.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["salomao", "sabedoria", "reis"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789007",
+    "category": "Profetas",
+    "difficulty": "EASY",
+    "question": "Quem foi engolido por um grande peixe após tentar fugir de Deus?",
+    "alternatives": [
+      { "id": "a", "description": "Elias", "isCorrect": false },
+      { "id": "b", "description": "Moisés", "isCorrect": false },
+      { "id": "c", "description": "Jonas", "isCorrect": true }
+    ],
+    "reference": "Jonas 1:17",
+    "explanation": "Jonas foi engolido por um grande peixe e passou três dias e três noites em seu ventre.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["jonas", "peixe", "ninive"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789008",
+    "category": "Daniel",
+    "difficulty": "EASY",
+    "question": "Quem foi lançado na cova dos leões e sobreviveu pela proteção divina?",
+    "alternatives": [
+      { "id": "a", "description": "José", "isCorrect": false },
+      { "id": "b", "description": "Daniel", "isCorrect": true },
+      { "id": "c", "description": "Ezequiel", "isCorrect": false }
+    ],
+    "reference": "Daniel 6:16-22",
+    "explanation": "Daniel foi jogado na cova dos leões por orar a Deus, mas um anjo fechou a boca dos leões.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["daniel", "leoes", "milagre"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789009",
+    "category": "Juízes",
+    "difficulty": "EASY",
+    "question": "Qual juiz de Israel tinha uma força extraordinária ligada ao seu cabelo?",
+    "alternatives": [
+      { "id": "a", "description": "Gideão", "isCorrect": false },
+      { "id": "b", "description": "Samuel", "isCorrect": false },
+      { "id": "c", "description": "Sansão", "isCorrect": true }
+    ],
+    "reference": "Juízes 16:17",
+    "explanation": "Sansão era um nazireu e sua força vinha de Deus, cujo sinal era o seu cabelo nunca cortado.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["sansao", "forca", "juizes"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789010",
+    "category": "Personagens Bíblicos",
+    "difficulty": "MEDIUM",
+    "question": "Qual rainha arriscou sua vida para salvar o povo judeu do extermínio?",
+    "alternatives": [
+      { "id": "a", "description": "Ester", "isCorrect": true },
+      { "id": "b", "description": "Rute", "isCorrect": false },
+      { "id": "c", "description": "Jezabel", "isCorrect": false }
+    ],
+    "reference": "Ester 4:16",
+    "explanation": "A rainha Ester intercedeu junto ao rei Assuero, salvando os judeus da trama de Hamã.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["ester", "rainha", "judeus"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789011",
+    "category": "Evangelhos",
+    "difficulty": "EASY",
+    "question": "Onde Jesus nasceu?",
+    "alternatives": [
+      { "id": "a", "description": "Nazaré", "isCorrect": false },
+      { "id": "b", "description": "Jerusalém", "isCorrect": false },
+      { "id": "c", "description": "Belém", "isCorrect": true }
+    ],
+    "reference": "Mateus 2:1",
+    "explanation": "Jesus nasceu na cidade de Belém da Judeia, cumprindo a profecia de Miqueias.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["jesus", "nascimento", "belem"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789012",
+    "category": "Milagres",
+    "difficulty": "EASY",
+    "question": "Qual foi o primeiro milagre de Jesus registrado no Evangelho de João?",
+    "alternatives": [
+      { "id": "a", "description": "A multiplicação dos pães", "isCorrect": false },
+      { "id": "b", "description": "A transformação de água em vinho", "isCorrect": true },
+      { "id": "c", "description": "A cura do cego de nascença", "isCorrect": false }
+    ],
+    "reference": "João 2:1-11",
+    "explanation": "Jesus transformou água em vinho em uma festa de casamento em Caná da Galileia.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["milagre", "jesus", "vinho"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789013",
+    "category": "Parábolas",
+    "difficulty": "MEDIUM",
+    "question": "Na parábola do Filho Pródigo, o que o pai fez quando o filho voltou?",
+    "alternatives": [
+      { "id": "a", "description": "O expulsou de casa", "isCorrect": false },
+      { "id": "b", "description": "O fez trabalhar como servo", "isCorrect": false },
+      { "id": "c", "description": "Fez uma grande festa para recebê-lo", "isCorrect": true }
+    ],
+    "reference": "Lucas 15:22-24",
+    "explanation": "O pai o recebeu com alegria, deu-lhe a melhor roupa e fez uma festa.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["parabola", "perdao", "filho prodigo"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789014",
+    "category": "Discípulos",
+    "difficulty": "EASY",
+    "question": "Qual discípulo traiu Jesus por trinta moedas de prata?",
+    "alternatives": [
+      { "id": "a", "description": "Pedro", "isCorrect": false },
+      { "id": "b", "description": "Judas Iscariotes", "isCorrect": true },
+      { "id": "c", "description": "Tomé", "isCorrect": false }
+    ],
+    "reference": "Mateus 26:14-15",
+    "explanation": "Judas Iscariotes entregou Jesus aos principais sacerdotes por 30 moedas de prata.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["traicao", "judas", "discipulos"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789015",
+    "category": "Apóstolos",
+    "difficulty": "EASY",
+    "question": "Qual apóstolo negou Jesus três vezes antes de o galo cantar?",
+    "alternatives": [
+      { "id": "a", "description": "João", "isCorrect": false },
+      { "id": "b", "description": "Tiago", "isCorrect": false },
+      { "id": "c", "description": "Pedro", "isCorrect": true }
+    ],
+    "reference": "Lucas 22:60-61",
+    "explanation": "Conforme Jesus havia predito, Pedro O negou três vezes durante Seu julgamento.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["pedro", "negacao", "jesus"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789016",
+    "category": "Milagres",
+    "difficulty": "EASY",
+    "question": "Qual homem Jesus ressuscitou após estar morto por quatro dias?",
+    "alternatives": [
+      { "id": "a", "description": "Jairo", "isCorrect": false },
+      { "id": "b", "description": "Lázaro", "isCorrect": true },
+      { "id": "c", "description": "Zaqueu", "isCorrect": false }
+    ],
+    "reference": "João 11:39-44",
+    "explanation": "Lázaro, irmão de Marta e Maria, foi ressuscitado por Jesus em Betânia.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["milagre", "lazaro", "ressurreicao"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789017",
+    "category": "Atos dos Apóstolos",
+    "difficulty": "EASY",
+    "question": "O que aconteceu no dia de Pentecostes em Jerusalém?",
+    "alternatives": [
+      { "id": "a", "description": "A ascensão de Jesus ao céu", "isCorrect": false },
+      { "id": "b", "description": "A descida do Espírito Santo", "isCorrect": true },
+      { "id": "c", "description": "A ressurreição de Estêvão", "isCorrect": false }
+    ],
+    "reference": "Atos 2:1-4",
+    "explanation": "Os discípulos ficaram cheios do Espírito Santo e começaram a falar em outras línguas.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["pentecostes", "espirito santo", "atos"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789018",
+    "category": "Apóstolos",
+    "difficulty": "MEDIUM",
+    "question": "Quem ficou cego no caminho para Damasco ao ter um encontro com Jesus?",
+    "alternatives": [
+      { "id": "a", "description": "Paulo (Saulo)", "isCorrect": true },
+      { "id": "b", "description": "Filipe", "isCorrect": false },
+      { "id": "c", "description": "Barnabé", "isCorrect": false }
+    ],
+    "reference": "Atos 9:3-8",
+    "explanation": "Saulo de Tarso perdeu a visão temporariamente após uma luz do céu brilhar sobre ele.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["paulo", "damasco", "conversao"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789019",
+    "category": "Apocalipse",
+    "difficulty": "HARD",
+    "question": "Na ilha de Patmos, quem recebeu a revelação do Apocalipse?",
+    "alternatives": [
+      { "id": "a", "description": "Paulo", "isCorrect": false },
+      { "id": "b", "description": "João", "isCorrect": true },
+      { "id": "c", "description": "Tiago", "isCorrect": false }
+    ],
+    "reference": "Apocalipse 1:9",
+    "explanation": "O apóstolo João estava exilado na ilha de Patmos quando teve as visões do Apocalipse.",
+    "xpReward": 100,
+    "difficultyScore": 50,
+    "tags": ["apocalipse", "joao", "patmos"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789020",
+    "category": "Pentateuco",
+    "difficulty": "EASY",
+    "question": "Quantas pragas Deus enviou ao Egito para que Faraó libertasse os israelitas?",
+    "alternatives": [
+      { "id": "a", "description": "7", "isCorrect": false },
+      { "id": "b", "description": "10", "isCorrect": true },
+      { "id": "c", "description": "12", "isCorrect": false }
+    ],
+    "reference": "Êxodo 7-12",
+    "explanation": "Deus enviou 10 pragas sobre o Egito antes de Faraó deixar o povo ir.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["pragas", "egito", "moises"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789021",
+    "category": "Personagens Bíblicos",
+    "difficulty": "MEDIUM",
+    "question": "Qual dos filhos de Jacó foi vendido como escravo pelos próprios irmãos?",
+    "alternatives": [
+      { "id": "a", "description": "Benjamim", "isCorrect": false },
+      { "id": "b", "description": "Rúben", "isCorrect": false },
+      { "id": "c", "description": "José", "isCorrect": true }
+    ],
+    "reference": "Gênesis 37:28",
+    "explanation": "Por inveja, os irmãos de José o venderam a mercadores ismaelitas que iam para o Egito.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["jose", "escravo", "jaco"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789022",
+    "category": "Reis",
+    "difficulty": "HARD",
+    "question": "Qual rei sucedeu Salomão e causou a divisão do reino de Israel?",
+    "alternatives": [
+      { "id": "a", "description": "Roboão", "isCorrect": true },
+      { "id": "b", "description": "Jeroboão", "isCorrect": false },
+      { "id": "c", "description": "Ezequias", "isCorrect": false }
+    ],
+    "reference": "1 Reis 12:1-16",
+    "explanation": "Roboão se recusou a aliviar os impostos, fazendo com que 10 tribos se rebelassem e formassem o Reino do Norte.",
+    "xpReward": 100,
+    "difficultyScore": 50,
+    "tags": ["divisao", "roboao", "israel"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789023",
+    "category": "Profetas",
+    "difficulty": "MEDIUM",
+    "question": "Que profeta subiu ao céu num redemoinho com carros e cavalos de fogo?",
+    "alternatives": [
+      { "id": "a", "description": "Enoque", "isCorrect": false },
+      { "id": "b", "description": "Elias", "isCorrect": true },
+      { "id": "c", "description": "Eliseu", "isCorrect": false }
+    ],
+    "reference": "2 Reis 2:11",
+    "explanation": "Elias não experimentou a morte natural, sendo levado ao céu de forma milagrosa.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["elias", "arrebatamento", "ceu"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789024",
+    "category": "Parábolas",
+    "difficulty": "EASY",
+    "question": "Na parábola do Bom Samaritano, quem ajudou o homem ferido na estrada?",
+    "alternatives": [
+      { "id": "a", "description": "Um Sacerdote", "isCorrect": false },
+      { "id": "b", "description": "Um Levita", "isCorrect": false },
+      { "id": "c", "description": "Um Samaritano", "isCorrect": true }
+    ],
+    "reference": "Lucas 10:33",
+    "explanation": "Apesar da inimizade entre judeus e samaritanos, foi o samaritano quem teve compaixão do ferido.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["samaritano", "parabola", "amor"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789025",
+    "category": "Personagens Bíblicos",
+    "difficulty": "EASY",
+    "question": "Qual é o nome do anjo que anunciou a Maria que ela seria mãe de Jesus?",
+    "alternatives": [
+      { "id": "a", "description": "Miguel", "isCorrect": false },
+      { "id": "b", "description": "Rafael", "isCorrect": false },
+      { "id": "c", "description": "Gabriel", "isCorrect": true }
+    ],
+    "reference": "Lucas 1:26-27",
+    "explanation": "O anjo Gabriel foi enviado por Deus para dar a boa nova a Maria.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["anjo", "gabriel", "maria"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789026",
+    "category": "Atos dos Apóstolos",
+    "difficulty": "MEDIUM",
+    "question": "Quem foi o primeiro mártir da igreja cristã, sendo apedrejado por sua fé?",
+    "alternatives": [
+      { "id": "a", "description": "Tiago", "isCorrect": false },
+      { "id": "b", "description": "Estêvão", "isCorrect": true },
+      { "id": "c", "description": "Filipe", "isCorrect": false }
+    ],
+    "reference": "Atos 7:59-60",
+    "explanation": "Estêvão foi apedrejado após fazer um discurso perante o Sinédrio, tornando-se o primeiro mártir.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["estevao", "martir", "atos"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789027",
+    "category": "Evangelhos",
+    "difficulty": "EASY",
+    "question": "No Sermão do Monte, como Jesus chamou aqueles que promovem a paz?",
+    "alternatives": [
+      { "id": "a", "description": "Filhos de Deus", "isCorrect": true },
+      { "id": "b", "description": "Herdeiros da Terra", "isCorrect": false },
+      { "id": "c", "description": "Luz do mundo", "isCorrect": false }
+    ],
+    "reference": "Mateus 5:9",
+    "explanation": "Bem-aventurados os pacificadores, porque serão chamados filhos de Deus.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["srmao", "paz", "bem-aventurancas"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789028",
+    "category": "Cartas Paulinas",
+    "difficulty": "MEDIUM",
+    "question": "De acordo com 1 Coríntios 13, qual é o maior destes três: fé, esperança e amor?",
+    "alternatives": [
+      { "id": "a", "description": "Fé", "isCorrect": false },
+      { "id": "b", "description": "Esperança", "isCorrect": false },
+      { "id": "c", "description": "Amor", "isCorrect": true }
+    ],
+    "reference": "1 Coríntios 13:13",
+    "explanation": "Paulo afirma que agora permanecem a fé, a esperança e o amor, mas o maior destes é o amor.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["amor", "paulo", "corintios"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789029",
+    "category": "Pentateuco",
+    "difficulty": "HARD",
+    "question": "Qual era o sinal da aliança que Deus fez com Noé após o dilúvio?",
+    "alternatives": [
+      { "id": "a", "description": "Uma pomba", "isCorrect": false },
+      { "id": "b", "description": "O arco-íris", "isCorrect": true },
+      { "id": "c", "description": "A circuncisão", "isCorrect": false }
+    ],
+    "reference": "Gênesis 9:13",
+    "explanation": "O arco-íris (ou arco nas nuvens) foi o sinal de que Deus nunca mais destruiria a terra com água.",
+    "xpReward": 100,
+    "difficultyScore": 50,
+    "tags": ["alianca", "noe", "arco-iris"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789030",
+    "category": "Milagres",
+    "difficulty": "EASY",
+    "question": "Quantos pães e peixes Jesus usou para alimentar 5.000 homens?",
+    "alternatives": [
+      { "id": "a", "description": "5 pães e 2 peixes", "isCorrect": true },
+      { "id": "b", "description": "7 pães e 3 peixes", "isCorrect": false },
+      { "id": "c", "description": "2 pães e 5 peixes", "isCorrect": false }
+    ],
+    "reference": "Mateus 14:17-21",
+    "explanation": "Um menino ofereceu 5 pães e 2 peixes, os quais Jesus multiplicou para alimentar a multidão.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["multiplicacao", "paes", "milagre"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789031",
+    "category": "Juízes",
+    "difficulty": "MEDIUM",
+    "question": "Qual juiz reduziu seu exército a apenas 300 homens para lutar contra os midianitas?",
+    "alternatives": [
+      { "id": "a", "description": "Sansão", "isCorrect": false },
+      { "id": "b", "description": "Gideão", "isCorrect": true },
+      { "id": "c", "description": "Jefte", "isCorrect": false }
+    ],
+    "reference": "Juízes 7:7",
+    "explanation": "Deus mandou Gideão reduzir o exército para provar que a vitória vinha do Senhor, não do poder humano.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["gideao", "midianitas", "guerra"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789032",
+    "category": "Personagens Bíblicos",
+    "difficulty": "EASY",
+    "question": "Quem era o cobrador de impostos de baixa estatura que subiu numa árvore para ver Jesus?",
+    "alternatives": [
+      { "id": "a", "description": "Mateus", "isCorrect": false },
+      { "id": "b", "description": "Zaqueu", "isCorrect": true },
+      { "id": "c", "description": "Nicodemos", "isCorrect": false }
+    ],
+    "reference": "Lucas 19:2-4",
+    "explanation": "Zaqueu, por ser baixo, subiu num sicômoro para conseguir ver Jesus passando.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["zaqueu", "arvore", "conversao"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789033",
+    "category": "Profetas",
+    "difficulty": "HARD",
+    "question": "Qual profeta teve a visão de um vale de ossos secos que ganharam vida?",
+    "alternatives": [
+      { "id": "a", "description": "Isaías", "isCorrect": false },
+      { "id": "b", "description": "Jeremias", "isCorrect": false },
+      { "id": "c", "description": "Ezequiel", "isCorrect": true }
+    ],
+    "reference": "Ezequiel 37:1-10",
+    "explanation": "Ezequiel profetizou sobre os ossos secos, simbolizando a restauração da nação de Israel.",
+    "xpReward": 100,
+    "difficultyScore": 50,
+    "tags": ["ossos", "ezequiel", "visao"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789034",
+    "category": "Parábolas",
+    "difficulty": "MEDIUM",
+    "question": "Na parábola do Semeador, o que representa a semente que caiu à beira do caminho?",
+    "alternatives": [
+      { "id": "a", "description": "Aquele que ouve a palavra e não a compreende", "isCorrect": true },
+      { "id": "b", "description": "Aquele que recebe a palavra com alegria mas desiste", "isCorrect": false },
+      { "id": "c", "description": "Aquele sufocado pelas riquezas", "isCorrect": false }
+    ],
+    "reference": "Mateus 13:19",
+    "explanation": "Jesus explicou que a semente à beira do caminho é quem ouve e não entende, e o maligno rouba o que foi semeado.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["semeador", "parabola", "semente"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789035",
+    "category": "Atos dos Apóstolos",
+    "difficulty": "MEDIUM",
+    "question": "Onde os discípulos foram chamados de cristãos pela primeira vez?",
+    "alternatives": [
+      { "id": "a", "description": "Jerusalém", "isCorrect": false },
+      { "id": "b", "description": "Antioquia", "isCorrect": true },
+      { "id": "c", "description": "Roma", "isCorrect": false }
+    ],
+    "reference": "Atos 11:26",
+    "explanation": "Foi na cidade de Antioquia que os seguidores de Jesus receberam pela primeira vez o nome de cristãos.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["cristaos", "antioquia", "atos"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789036",
+    "category": "Cartas Paulinas",
+    "difficulty": "HARD",
+    "question": "Quais são os componentes da armadura de Deus que Paulo descreve em Efésios 6?",
+    "alternatives": [
+      { "id": "a", "description": "Coroa de espinhos, espada e manto", "isCorrect": false },
+      { "id": "b", "description": "Cinto da verdade, couraça da justiça, capacete da salvação...", "isCorrect": true },
+      { "id": "c", "description": "Vara, cajado, funda e pedras", "isCorrect": false }
+    ],
+    "reference": "Efésios 6:14-17",
+    "explanation": "Paulo lista cinto da verdade, couraça da justiça, calçados do evangelho, escudo da fé, capacete da salvação e espada do Espírito.",
+    "xpReward": 100,
+    "difficultyScore": 50,
+    "tags": ["armadura", "paulo", "efesios"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789037",
+    "category": "Apocalipse",
+    "difficulty": "MEDIUM",
+    "question": "Quais são as duas cidades citadas no Apocalipse cujas igrejas não receberam censuras?",
+    "alternatives": [
+      { "id": "a", "description": "Éfeso e Laodiceia", "isCorrect": false },
+      { "id": "b", "description": "Esmirna e Filadélfia", "isCorrect": true },
+      { "id": "c", "description": "Pérgamo e Tiatira", "isCorrect": false }
+    ],
+    "reference": "Apocalipse 2-3",
+    "explanation": "Apenas as igrejas de Esmirna e Filadélfia receberam apenas elogios de Jesus nas sete cartas.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["igrejas", "apocalipse", "esmirna"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789038",
+    "category": "Milagres",
+    "difficulty": "EASY",
+    "question": "Quem caminhou sobre as águas em direção a Jesus, mas começou a afundar por duvidar?",
+    "alternatives": [
+      { "id": "a", "description": "João", "isCorrect": false },
+      { "id": "b", "description": "Pedro", "isCorrect": true },
+      { "id": "c", "description": "André", "isCorrect": false }
+    ],
+    "reference": "Mateus 14:28-30",
+    "explanation": "Pedro andou sobre a água, mas, ao reparar no vento forte, teve medo e começou a afundar.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["pedro", "aguas", "milagre"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789039",
+    "category": "Evangelhos",
+    "difficulty": "MEDIUM",
+    "question": "Qual dos fariseus foi visitar Jesus durante a noite para conversar sobre o novo nascimento?",
+    "alternatives": [
+      { "id": "a", "description": "Nicodemos", "isCorrect": true },
+      { "id": "b", "description": "Caifás", "isCorrect": false },
+      { "id": "c", "description": "Pilatos", "isCorrect": false }
+    ],
+    "reference": "João 3:1-2",
+    "explanation": "Nicodemos era uma autoridade entre os judeus e procurou Jesus à noite para entender Seus ensinamentos.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["nicodemos", "nascimento", "fariseu"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789040",
+    "category": "Pentateuco",
+    "difficulty": "EASY",
+    "question": "Quais tábuas Deus entregou a Moisés no Monte Sinai?",
+    "alternatives": [
+      { "id": "a", "description": "As Tábuas dos Dez Mandamentos", "isCorrect": true },
+      { "id": "b", "description": "As Tábuas do Éden", "isCorrect": false },
+      { "id": "c", "description": "As Tábuas de Salomão", "isCorrect": false }
+    ],
+    "reference": "Êxodo 24:12",
+    "explanation": "Deus deu a Moisés duas tábuas de pedra contendo os Dez Mandamentos escritos por Ele.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["mandamentos", "moises", "sinai"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789041",
+    "category": "Reis",
+    "difficulty": "HARD",
+    "question": "Quem era o capitão do exército sírio que foi curado de lepra ao mergulhar sete vezes no rio Jordão?",
+    "alternatives": [
+      { "id": "a", "description": "Geazi", "isCorrect": false },
+      { "id": "b", "description": "Naamã", "isCorrect": true },
+      { "id": "c", "description": "Hazael", "isCorrect": false }
+    ],
+    "reference": "2 Reis 5:14",
+    "explanation": "Naamã seguiu as instruções do profeta Eliseu e foi curado de sua enfermidade.",
+    "xpReward": 100,
+    "difficultyScore": 50,
+    "tags": ["naama", "lepra", "eliseu"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789042",
+    "category": "Personagens Bíblicos",
+    "difficulty": "MEDIUM",
+    "question": "Quem era a mulher moabita que disse à sua sogra: 'Onde quer que fores, irei eu'?",
+    "alternatives": [
+      { "id": "a", "description": "Orfa", "isCorrect": false },
+      { "id": "b", "description": "Raabe", "isCorrect": false },
+      { "id": "c", "description": "Rute", "isCorrect": true }
+    ],
+    "reference": "Rute 1:16",
+    "explanation": "Rute demonstrou extrema lealdade à sua sogra Noemi, decidindo seguir o Deus de Israel.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["rute", "noemi", "lealdade"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789043",
+    "category": "Profetas",
+    "difficulty": "EASY",
+    "question": "Qual profeta foi lançado numa cova de leões pelo rei Dario?",
+    "alternatives": [
+      { "id": "a", "description": "Jeremias", "isCorrect": false },
+      { "id": "b", "description": "Ezequiel", "isCorrect": false },
+      { "id": "c", "description": "Daniel", "isCorrect": true }
+    ],
+    "reference": "Daniel 6:16",
+    "explanation": "Daniel foi lançado aos leões por continuar a orar a Deus, mas foi protegido.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["daniel", "leoes", "profetas"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789044",
+    "category": "Evangelhos",
+    "difficulty": "EASY",
+    "question": "O que Jesus usou para lavar os pés de seus discípulos na Última Ceia?",
+    "alternatives": [
+      { "id": "a", "description": "Água e uma bacia", "isCorrect": true },
+      { "id": "b", "description": "Óleo perfumado", "isCorrect": false },
+      { "id": "c", "description": "Vinho", "isCorrect": false }
+    ],
+    "reference": "João 13:4-5",
+    "explanation": "Jesus derramou água numa bacia e começou a lavar os pés dos discípulos, ensinando humildade.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["lava pes", "humildade", "jesus"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789045",
+    "category": "Milagres",
+    "difficulty": "MEDIUM",
+    "question": "O que aconteceu quando Jesus curou dez leprosos?",
+    "alternatives": [
+      { "id": "a", "description": "Todos voltaram para agradecer", "isCorrect": false },
+      { "id": "b", "description": "Apenas um voltou para agradecer", "isCorrect": true },
+      { "id": "c", "description": "Nenhum voltou", "isCorrect": false }
+    ],
+    "reference": "Lucas 17:15-16",
+    "explanation": "Dos dez leprosos curados, apenas um, que era samaritano, voltou para dar glória a Deus.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["gratidao", "leprosos", "milagre"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789046",
+    "category": "Parábolas",
+    "difficulty": "EASY",
+    "question": "Na parábola da ovelha perdida, quantas ovelhas o pastor deixa no campo para buscar a perdida?",
+    "alternatives": [
+      { "id": "a", "description": "99", "isCorrect": true },
+      { "id": "b", "description": "50", "isCorrect": false },
+      { "id": "c", "description": "10", "isCorrect": false }
+    ],
+    "reference": "Lucas 15:4",
+    "explanation": "O pastor deixa as noventa e nove ovelhas no deserto e vai atrás daquela que se perdeu.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["ovelha", "pastor", "parabola"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789047",
+    "category": "Pentateuco",
+    "difficulty": "MEDIUM",
+    "question": "Qual era o nome da esposa de Abraão antes de Deus mudar o seu nome?",
+    "alternatives": [
+      { "id": "a", "description": "Hagar", "isCorrect": false },
+      { "id": "b", "description": "Rebeca", "isCorrect": false },
+      { "id": "c", "description": "Sarai", "isCorrect": true }
+    ],
+    "reference": "Gênesis 17:15",
+    "explanation": "Deus mudou o nome de Sarai para Sara, que significa 'princesa'.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["sara", "abraao", "nomes"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789048",
+    "category": "Personagens Bíblicos",
+    "difficulty": "HARD",
+    "question": "Quem era o sacerdote e juiz cujos filhos, Hofni e Fineias, eram corruptos?",
+    "alternatives": [
+      { "id": "a", "description": "Esdras", "isCorrect": false },
+      { "id": "b", "description": "Eli", "isCorrect": true },
+      { "id": "c", "description": "Samuel", "isCorrect": false }
+    ],
+    "reference": "1 Samuel 2:12",
+    "explanation": "O sacerdote Eli falhou em disciplinar seus filhos perversos, resultando no julgamento divino de sua família.",
+    "xpReward": 100,
+    "difficultyScore": 50,
+    "tags": ["eli", "sacerdote", "corrupcao"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789049",
+    "category": "Apocalipse",
+    "difficulty": "MEDIUM",
+    "question": "No livro do Apocalipse, qual animal é símbolo de Jesus, descrito como aquele que abre os sete selos?",
+    "alternatives": [
+      { "id": "a", "description": "A Águia", "isCorrect": false },
+      { "id": "b", "description": "O Leão da tribo de Judá / O Cordeiro", "isCorrect": true },
+      { "id": "c", "description": "O Touro", "isCorrect": false }
+    ],
+    "reference": "Apocalipse 5:5-6",
+    "explanation": "Jesus é chamado de o Leão da tribo de Judá e aparece como um Cordeiro que foi morto.",
+    "xpReward": 50,
+    "difficultyScore": 30,
+    "tags": ["cordeiro", "leao", "apocalipse"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  },
+  {
+    "id": "673f4e1a-1b1a-4c22-984e-123456789050",
+    "category": "Evangelhos",
+    "difficulty": "EASY",
+    "question": "Qual foi a profissão de Mateus antes de ser chamado para ser discípulo de Jesus?",
+    "alternatives": [
+      { "id": "a", "description": "Pescador", "isCorrect": false },
+      { "id": "b", "description": "Cobrador de impostos (publicano)", "isCorrect": true },
+      { "id": "c", "description": "Carpinteiro", "isCorrect": false }
+    ],
+    "reference": "Mateus 9:9",
+    "explanation": "Mateus, também chamado de Levi, estava na coletoria de impostos quando Jesus o chamou.",
+    "xpReward": 20,
+    "difficultyScore": 10,
+    "tags": ["mateus", "impostos", "discipulos"],
+    "stats": { "timesPlayed": 0, "correctRate": 0, "averageAnswerTime": 0 }
+  }
+]
