@@ -1,73 +1,60 @@
-# React + TypeScript + Vite
+# 🖥️ BibleQuest Admin - Painel Administrativo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interface web administrativa construída com React, TypeScript, Vite e TailwindCSS, responsável pelo gerenciamento de conteúdo da plataforma BibleQuest.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🔑 Funcionalidades Principais
 
-## React Compiler
+- **Autenticação de Administradores:** Login restrito com validação de credenciais administrativas.
+- **Gerenciamento de Categorias (CRUD):** Criação, listagem, edição e exclusão (com proteção contra órfãos) de categorias do quiz.
+- **Gerenciamento de Perguntas (CRUD):** Criação e edição de perguntas detalhadas contendo alternativas, indicação de resposta correta, campo de estudos (referência bíblica) e explicação pós-resposta.
+- **Configurações de Perfil:** Atualização rápida de senha e alteração do avatar do administrador.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🛠️ Tecnologias Utilizadas
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **React & TypeScript:** Biblioteca de UI e tipagem estática.
+- **Vite:** Ferramenta de build extremamente rápida para desenvolvimento frontend moderno.
+- **Tailwind CSS:** Framework de estilização baseado em classes utilitárias.
+- **React Hook Form & Zod:** Gerenciamento eficiente de estados de formulários e validação robusta de entradas do usuário.
+- **Axios:** Cliente HTTP para comunicação integrada com a API.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🚀 Como Executar Localmente
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. Configurar Variáveis de Ambiente
+Crie um arquivo `.env` na raiz do diretório `apps/admin` apontando para a sua API local ou de produção:
+
+```env
+VITE_API_URL="http://localhost:3000"
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Inicializar o Servidor Local
+Com as dependências instaladas na raiz do monorepo, inicie o servidor de desenvolvimento do Vite:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+npm run dev
+```
+O painel administrativo estará disponível em `http://localhost:5173`.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## 📁 Estrutura de Pastas
+
+```
+apps/admin/
+├── src/
+│   ├── components/       # Componentes reutilizáveis (Layout, Sidebar, Header)
+│   ├── features/         # Módulos principais (auth, categories, questions)
+│   │   ├── categories/   # CRUD de Categorias (Formulários, Listas, Tabela)
+│   │   └── questions/    # CRUD de Perguntas (Formulários, Listas)
+│   ├── hooks/            # Hooks customizados para chamadas HTTP e autenticação
+│   ├── services/         # Instância do Axios e requisições centrais da API
+│   ├── App.tsx           # Roteamento e layouts gerais da aplicação
+│   └── main.tsx          # Ponto de entrada do React
+├── package.json
+└── vite.config.ts
 ```

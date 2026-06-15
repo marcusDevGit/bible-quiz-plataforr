@@ -1,6 +1,6 @@
-# Bible Quiz Platform - Monorepo
+# 📖 BibleQuest Platform - Monorepo
 
-Plataforma completa de Quiz Bíblico com gamificação, contendo um painel administrativo para gerenciamento de perguntas e categorias, e uma API REST estruturada.
+Plataforma completa de Quiz Bíblico com gamificação, contendo um painel administrativo para gerenciamento de perguntas e categorias, uma API REST robusta e estruturada, e um aplicativo móvel gamificado para jogadores.
 
 ---
 
@@ -8,60 +8,81 @@ Plataforma completa de Quiz Bíblico com gamificação, contendo um painel admin
 
 O projeto é estruturado como um **Monorepo** gerenciado com **Turborepo** e **npm Workspaces**, garantindo o compartilhamento eficiente de tipos e validações entre o cliente e o servidor.
 
-### Decisões de Engenharia (Backend Layered Architecture)
+### Divisão do Monorepo
 
-Para garantir clareza, facilidade de manutenção e desacoplamento no backend (`apps/api`), implementamos uma **arquitetura em camadas**:
-
-- **Rotas (`routes`)**: Mapeiam os endpoints Express, ligam os middlewares e encaminham a requisição.
-- **Controladores (`controllers`)**: Tratam exclusivamente do protocolo HTTP, realizam o parse dos payloads brutos via Zod no ponto de entrada e respondem status HTTP semânticos.
-- **Serviços (`services`)**: O coração da aplicação. Contêm as regras de negócio de domínio (exclusão lógica, validação de categorias órfãs, controle de XP e unicidade de nomes).
-- **Repositórios (`repositories`)**: Camada isolada que executa queries diretas via Prisma Client, protegendo as outras camadas de acoplamento com o banco.
-- **Validações (`shared-validation`)**: Centraliza as restrições e regras no pacote Zod compartilhado, prevenindo inconsistências entre frontend e backend.
+- **`apps/api` (Backend):** Servidor Express construído com TypeScript e Prisma ORM conectado ao Neon PostgreSQL.
+- **`apps/admin` (Frontend Admin):** Painel administrativo React construído com Vite e TailwindCSS para gerenciamento de perguntas e categorias.
+- **`apps/mobile` (Frontend App):** Aplicativo móvel construído com React Native (Expo Router) e NativeWind para os jogadores responderem quizes e subirem no ranking.
+- **`packages/shared-types`:** Definições comuns de tipos TypeScript consumidas pela API, Admin e App Mobile.
+- **`packages/shared-validation`:** Validações de esquemas Zod compartilhadas para segurança de dados consistente entre as requisições do app/admin e as respostas do servidor.
 
 ---
 
 ## 🛠️ Linha do Tempo e Funcionalidades Desenvolvidas
 
-### Fase 1: Autenticação de Usuários e Dashboard Base
+### Fase 1: Autenticação de Usuários e Dashboard Base (Admin)
+- **Autenticação Segura:** Registro e login administrativos com criptografia de senhas (`bcrypt`) e tokens de sessão (`jsonwebtoken`).
+- **Interface do Dashboard:** Painel administrativo responsivo com menu lateral retrátil (`Sidebar`) e cabeçalho modular.
+- **Configurações de Perfil:** Atualização reativa de senha e upload/visualização de avatar do administrador.
 
-- **Autenticação Segura**: Implementação de cadastro e login com criptografia de senhas (`bcrypt`) e tokens de sessão (`jsonwebtoken`).
-- **Interface do Dashboard**: Conversão das interfaces Stitch para componentes React reativos, com menus retráteis (`Sidebar`) e cabeçalho modular.
-- **Menu de Perfil e Avatar**: Dropdown de perfil no `Header` contendo rotas rápidas e formulário integrado (`SettingsForm`) para alteração reativa de senha e upload/visualização de foto de avatar do admin.
+### Fase 2: CRUD de Categorias e Perguntas & Seed do Banco (Admin/API)
+- **Modelagem Prisma & Migrations:** Schema estendido no Neon PostgreSQL para controle de gamificação e categorias sem perda de consistência.
+- **Seeding de Dados:** Script automático (`seed.ts`) que popula 50 perguntas bíblicas em transações atômicas aninhadas.
+- **CRUD Completo:** Desenvolvimento de endpoints com paginação nativa e filtros de busca para controle de Categorias e Perguntas.
 
-### Fase 2: CRUD de Categorias e Perguntas & Seed de Banco
+### Fase 3: Mobile MVP (App Mobile)
+- **Autenticação Mobile:** Interfaces de login e registro mobile com persistência de token.
+- **Área de Perfil:** Visualização de conquistas, estatísticas de partidas e barra de XP com badge de nível flutuante sobre o avatar do jogador.
+- **Quiz Individual:** Mecânica de jogo rápida com tempo limite, alternativas e tela de resultado mostrando pontuação e XP acumulado.
 
-- **Modelagem Estendida**: Alteração do schema físico do Prisma para acomodar o padrão oficial de perguntas do quiz, incluindo campos de estudo e estatísticas.
-- **Migração Física**: Execução de migrações estruturadas no Neon PostgreSQL para adicionar campos de gamificação sem perda de consistência.
-- **Seeding de Dados**: Criação de um script automático (`seed.ts`) que consome os dados brutos e popula 50 perguntas completas em transações atômicas aninhadas (salvamento de perguntas + alternativas de uma só vez).
-- **CRUD Completo de API**: Desenvolvimento de repositórios, serviços, controladores e rotas para controle de Categoria e Pergunta com suporte a paginação nativa e filtros dinâmicos de busca.
+### Fase 4: Ranking & Leaderboard (App Mobile)
+- **Pódio do Top 3:** Exibição gráfica destacada para os três melhores jogadores em formato de pilar dourado/prateado, conforme o design system.
+- **Seletor de Abas:** Navegação simplificada entre classificações Global, Semanal e Mensal.
+- **Card Flutuante "Você":** Rodapé fixo exibindo a posição exata do jogador conectado.
+- **Responsividade e Rolagem:** Altura de viewport delimitada dinamicamente via `useWindowDimensions` para impedir sobreposição do rodapé na exibição simulada em navegadores web.
 
 ---
 
-## 📚 Informações e Padrões Utilizados
+## 🎨 Design System: Sacred Wisdom
 
-As seguintes diretrizes e dados serviram como pilares para a construção do sistema:
-
-1. **Padrão de Pergunta Bíblica Oficial (`.ia/README_QUESTIONS.md`)**:
-   - ID único por UUID.
-   - Limite estrito de 2 a 5 alternativas com exatamente uma alternativa correta.
-   - Presença obrigatória de referência bíblica e explicação contextualizada.
-   - Sistema de recompensa de XP (`xpReward`) e score de dificuldade (`difficultyScore`).
-   - Tags de pesquisa (`tags`) e contadores de uso (`stats`).
-2. **Dados Originais (`data/questions.json` e `category.json`)**:
-   - Base inicial contendo as 50 questões históricas e de estudo e as definições de categorias do quiz.
+Toda a identidade visual da plataforma mobile foi baseada nas especificações do **Sacred Wisdom** (localizadas em `bible-quest-Design/sacred_wisdom/DESIGN.md`), focando em:
+- **Primary:** Azul Escuro (`#00236f`) para estabilidade e confiança.
+- **Secondary Container:** Ouro (`#fea619`) e Ouro Escuro (`#855300`) para badges de níveis, troféus e pontos.
+- **Tertiary Fixed Dim:** Emerald Green (`#4edea3`) representando crescimento nas estatísticas e acúmulo de XP.
+- **Shapes:** Radii suaves (`8px` para botões/entradas, `24px` para cartões) para uma estética moderna e amigável.
 
 ---
 
 ## 🚀 Como Executar o Projeto
 
 ### Pré-requisitos
-
 - Node.js v20.20.0+
-- Conta/Instância PostgreSQL no Neon com `DATABASE_URL` configurada no `.env` de `apps/api`.
+- Instância PostgreSQL no Neon com `DATABASE_URL` configurada no `.env` do `apps/api`.
 
 ### Inicialização Rápida
 
-1. Instalar as dependências do monorepo na raiz:
+1. **Instalar Dependências:**
+   Instale as dependências do monorepo a partir do diretório raiz:
    ```bash
    npm install
    ```
+
+2. **Configurar o Banco de Dados (API):**
+   Crie o arquivo `.env` em `apps/api/` e execute as migrações:
+   ```bash
+   cd apps/api
+   npx prisma migrate dev
+   npx prisma db seed
+   cd ../..
+   ```
+
+3. **Executar a Plataforma Completa:**
+   Inicie todos os projetos (API, Admin e App Mobile) simultaneamente a partir da raiz usando o comando Turbo:
+   ```bash
+   npm run dev
+   ```
+
+Aplicações locais ativas por padrão:
+- **API Backend:** `http://localhost:3000`
+- **Painel Administrativo:** `http://localhost:5173`
+- **App Mobile Simulator (Expo Web):** `http://localhost:8081`
