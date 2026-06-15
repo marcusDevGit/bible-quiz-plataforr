@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Quando a tela for maior que um tablet (Web), aplicamos um fundo contrastante para o simulador */
+@media (min-width: 768px) {
+  body {
+    background-color: #e6e8ea !important;
+  }
+}
