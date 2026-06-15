@@ -20,7 +20,7 @@ export function CategoryModal({ isOpen, onClose }: CategoryModalProps) {
       setName("");
       onClose();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Erro: ${error.message}`);
     },
   });
