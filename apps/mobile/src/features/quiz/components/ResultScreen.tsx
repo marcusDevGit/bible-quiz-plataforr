@@ -1,8 +1,10 @@
 // apps/mobile/app/result.tsx
+import { useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
+import { quizService } from "../services/quiz.service";
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -15,6 +17,23 @@ export default function ResultScreen() {
   const numTotal = Number(total) || 10;
   const xpGained = numScore * 15;
   const numTimeElapsed = Number(timeElapsed) || 0;
+
+  const hasSubmitted = useRef(false);
+
+  useEffect(() => {
+    if (hasSubmitted.current) return;
+    hasSubmitted.current = true;
+
+    async function saveMatch() {
+      try {
+        const response = await quizService.submitMatch(numScore);
+        console.log("✓ Partida salva no backend:", response);
+      } catch (error) {
+        console.error("❌ Erro ao salvar partida no backend:", error);
+      }
+    }
+    saveMatch();
+  }, [numScore]);
 
   // Formata o tempo decorrido em mm:ss
   const formatTime = (seconds: number) => {

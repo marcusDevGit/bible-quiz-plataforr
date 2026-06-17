@@ -25,4 +25,16 @@ export const quizService = {
 
     return shuffled.slice(0, limit);
   },
+
+  async submitMatch(
+    score: number,
+  ): Promise<{ message: string; xpGained: number; totalPoints: number }> {
+    return apiFetch<{ message: string; xpGained: number; totalPoints: number }>(
+      "/match",
+      {
+        method: "POST",
+        body: JSON.stringify({ score }),
+      },
+    );
+  },
 };
