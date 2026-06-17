@@ -136,7 +136,10 @@ export default function DashboardScreen() {
           {/* Quick Actions Bento Grid */}
           <View className="flex-row justify-between gap-4">
             {/* Action 1 */}
-            <TouchableOpacity className="flex-1 bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/30 items-center justify-center">
+            <TouchableOpacity
+              onPress={() => router.push("/quiz")}
+              className="flex-1 bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/30 items-center justify-center"
+            >
               <View className="w-12 h-12 rounded-full bg-primary-container/10 items-center justify-center mb-2">
                 <MaterialIcons
                   name="calendar-today"
@@ -153,7 +156,10 @@ export default function DashboardScreen() {
             </TouchableOpacity>
 
             {/* Action 2 */}
-            <TouchableOpacity className="flex-1 bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/30 items-center justify-center relative">
+            <TouchableOpacity
+              onPress={() => router.push("/arena")}
+              className="flex-1 bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/30 items-center justify-center relative"
+            >
               {/* Notificação Red Dot */}
               <View className="absolute top-3 right-3 w-2 h-2 rounded-full bg-error" />
 
