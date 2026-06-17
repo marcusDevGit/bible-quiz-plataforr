@@ -4,6 +4,7 @@ import { authRouter } from "./routes/auth.routes";
 import { questionRouter } from "./routes/question.routes";
 import { categoryRouter } from "./routes/category.routes";
 import { rankingRouter } from "./routes/ranking.routes";
+import { matchRouter } from "./routes/match.routes";
 import { errorMiddleware } from "./middlewares/error-middleware";
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(authRouter);
 app.use(questionRouter);
 app.use(categoryRouter);
 app.use(rankingRouter);
+app.use(matchRouter);
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3001;
