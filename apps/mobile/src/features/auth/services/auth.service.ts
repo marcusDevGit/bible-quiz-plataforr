@@ -45,4 +45,7 @@ export const authService = {
     }
     return await SecureStore.getItemAsync(TOKEN_KEY);
   },
+  async getProfile(): Promise<{ user: any }> {
+    return apiFetch<{ user: any }>("/users/me");
+  },
 };

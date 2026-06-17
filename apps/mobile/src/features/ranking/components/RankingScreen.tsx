@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { RankingPlayer, rankingService } from "../services/ranking.service";
 import { MaterialIcons } from "@expo/vector-icons";
+import { authService } from "@/features/auth/services/auth.service";
 
 const TOPBAR_HEIGHT = 64;
 const TABBAR_HEIGHT = 65;
@@ -31,6 +32,14 @@ export default function RankingScreen() {
     queryKey: ["global-ranking"],
     queryFn: () => rankingService.getGlobalRanking(),
   });
+
+  const { data: profileData } = useQuery({
+    queryKey: ["currentUserProfile"],
+    queryFn: () => authService.getProfile(),
+  });
+  const loggedUser = profileData?.user;
+  // Localiza a posição do usuário logado na lista
+  const loggedUserRank = ranking?.find((p) => p.id === loggedUser?.id);
 
   if (isLoading) {
     return (
@@ -386,17 +395,30 @@ export default function RankingScreen() {
         <View className="absolute bottom-5 left-5 right-5 bg-primary rounded-2xl shadow-lg p-4 flex-row items-center justify-between z-50">
           <View className="flex-row items-center gap-4">
             <Text className="font-title-md text-white font-bold w-8 text-center">
-              124º
+              {loggedUserRank ? `${loggedUserRank.position}º` : "-"}
             </Text>
             <View
               style={{ width: 40, height: 40, borderRadius: 20 }}
               className="border-2 border-white bg-primary-container items-center justify-center overflow-hidden"
             >
-              <MaterialIcons name="person" size={20} color="#b6c4ff" />
+              {loggedUser?.avatar ? (
+                <Image
+                  source={{ uri: loggedUser.avatar }}
+                  className="w-full h-full"
+                />
+              ) : (
+                <MaterialIcons name="person" size={20} color="#b6c4ff" />
+              )}
             </View>
-            <Text className="font-body-lg text-white font-semibold">Você</Text>
+            {/* Nome real ou "Você" */}
+            <Text className="font-body-lg text-white font-semibold">
+              {loggedUser?.name || "Você"}
+            </Text>
           </View>
-          <Text className="font-label-lg text-white font-bold">1.250 XP</Text>
+          {/* Pontuação real do ranking */}
+          <Text className="font-label-lg text-white font-bold">
+            {loggedUserRank ? `${loggedUserRank.points} XP` : "0 XP"}
+          </Text>
         </View>
       </View>
     </View>
