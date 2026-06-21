@@ -1,4 +1,3 @@
-// apps/mobile/app/_layout.tsx
 import { Slot } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { View, StyleSheet, Platform } from "react-native";
@@ -22,10 +21,9 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 480,
     alignSelf: "center",
-    backgroundColor: "#f7f9fb", // Cor de fundo padrão da superfície
+    backgroundColor: "#f7f9fb",
     ...Platform.select({
       web: {
-        // Aplica uma sombra elegante apenas na renderização web para destacar o mockup
         boxShadow: "0 0 24px rgba(0, 35, 111, 0.08)",
       },
     }),

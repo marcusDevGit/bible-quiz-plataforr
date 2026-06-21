@@ -1,4 +1,3 @@
-// apps/mobile/src/features/auth/components/LoginScreen.tsx
 import { useState } from "react";
 import {
   SafeAreaView,
