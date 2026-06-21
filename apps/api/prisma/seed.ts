@@ -83,8 +83,81 @@ async function main() {
       );
     }
   }
+
+  // 🏆 1. Início da Carga de Conquistas (dentro do main)
+  console.log("🏆 Populando conquistas no banco de dados...");
+  const achievements = [
+    {
+      code: "FIRST_STEP",
+      name: "Primeiro Passo",
+      description: "Responder 10 perguntas.",
+      rarity: "COMMON",
+      xpReward: 50,
+      icon: "first-step",
+    },
+    {
+      code: "MASTER_GOSPELS",
+      name: "Mestre dos Evangelhos",
+      description:
+        "Obtenha domínio completo dos quatro Evangelhos (Mateus, Marcos, Lucas e João).",
+      rarity: "LEGENDARY",
+      xpReward: 1000,
+      icon: "master-gospels",
+    },
+    {
+      code: "WISDOM_OF_SOLOMON",
+      name: "Sabedoria de Salomão",
+      description:
+        "Domine os livros sapienciais (Provérbios, Eclesiastes, Sabedoria, Cânticos).",
+      rarity: "EPIC",
+      xpReward: 750,
+      icon: "wisdom-of-solomon",
+    },
+    {
+      code: "STREAK_30",
+      name: "Sequência de 30 Dias",
+      description: "Mantenha um streak diário maior ou igual a 30 dias.",
+      rarity: "RARE",
+      xpReward: 500,
+      icon: "streak-30",
+    },
+    {
+      code: "PROPHET_OF_NATIONS",
+      name: "Profeta das Nações",
+      description:
+        "Complete Isaías, Jeremias, Ezequiel e Daniel com pelo menos 90% de aproveitamento.",
+      rarity: "LEGENDARY",
+      xpReward: 1000,
+      icon: "prophet-of-nations",
+    },
+  ];
+
+  for (const ach of achievements) {
+    await prisma.achievement.upsert({
+      where: { code: ach.code },
+      update: {
+        name: ach.name,
+        description: ach.description,
+        rarity: ach.rarity as any,
+        xpReward: ach.xpReward,
+        icon: ach.icon,
+      },
+      create: {
+        code: ach.code,
+        name: ach.name,
+        description: ach.description,
+        rarity: ach.rarity as any,
+        xpReward: ach.xpReward,
+        icon: ach.icon,
+      },
+    });
+    console.log(`✓ Conquista registrada: "${ach.name}"`);
+  }
+
   console.log("🌱 Seed concluído com sucesso!");
-}
+} // 2. Fim do main()
+
+// 3. Orquestração de Erros e Desconexão
 main()
   .catch((e) => {
     console.error("❌ Erro durante a execução do seed:", e);
