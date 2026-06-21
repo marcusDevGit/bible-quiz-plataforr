@@ -107,12 +107,9 @@ export class QuestionRepository {
 
   async update(id: string, data: QuestionInput) {
     return prisma.$transaction(async (tx) => {
-      // 1. Deletar alternativas existentes para esta pergunta
       await tx.alternative.deleteMany({
         where: { questionId: id },
       });
-
-      // 2. Atualizar a pergunta e criar as novas alternativas
       return tx.question.update({
         where: { id },
         data: {
