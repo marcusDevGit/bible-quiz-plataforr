@@ -1,5 +1,3 @@
-// apps/admin/src/service/categories.service.ts
-
 import { apiFetch } from "./api";
 
 export interface Category {

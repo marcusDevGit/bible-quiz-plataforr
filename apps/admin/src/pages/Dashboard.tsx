@@ -1,4 +1,3 @@
-// apps/admin/src/pages/Dashboard.tsx
 import { useQuery } from "@tanstack/react-query";
 import { getQuestions } from "../service/question.service";
 import { StatCard } from "../components/StatCard";

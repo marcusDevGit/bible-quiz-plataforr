@@ -1,4 +1,3 @@
-// apps/admin/src/pages/Login.tsx
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -15,13 +14,10 @@ export function Login() {
   const mutation = useMutation({
     mutationFn: login,
     onSuccess: (data) => {
-      // O Sucesso! Guardamos os dados no cofre do navegador
       localStorage.setItem("admin_token", data.token);
       localStorage.setItem("admin_user", JSON.stringify(data.user));
 
       toast.success(`Bem-vindo(a) de volta, ${data.user.name}!`);
-
-      // Jogamos o usuário para dentro do painel
       navigate("/");
     },
     onError: (error: Error) => {
@@ -39,10 +35,8 @@ export function Login() {
   };
 
   return (
-    // Tela cheia, centralizada
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-surface border border-outline-variant rounded-2xl shadow-lg p-8">
-        {/* Cabeçalho do Login */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-primary-container text-primary rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="material-symbols-outlined text-[32px]">lock</span>
@@ -55,7 +49,6 @@ export function Login() {
           </p>
         </div>
 
-        {/* Formulário */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-on-surface mb-1">
