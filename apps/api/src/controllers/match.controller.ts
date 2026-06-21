@@ -1,18 +1,26 @@
 import { Request, Response } from "express";
 import { prisma } from "../prisma/client";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
+import { AchievementsService } from "../services/achievements.service";
 
+const achievementsService = new AchievementsService();
 export class MatchController {
   async submitMatch(req: Request, res: Response) {
     try {
       const userId = (req as AuthenticatedRequest).userId;
-      const { score } = req.body;
+      const { score, answers } = req.body;
 
       if (!userId) {
         return res.status(401).json({ message: "Usuário não autenticado" });
       }
       if (score === undefined || typeof score !== "number") {
         return res.status(400).json({ message: "Pontuação inválida" });
+      }
+
+      if (answers && !Array.isArray(answers)) {
+        return res
+          .status(400)
+          .json({ message: "O formato das respostas esta inválido" });
       }
 
       const xpGained = score * 15;
@@ -25,6 +33,17 @@ export class MatchController {
             winner: userId,
           },
         });
+
+        if (answers && answers.length > 0) {
+          await tx.matchQuestion.createMany({
+            data: answers.map((ans: any) => ({
+              matchId: match.id,
+              questionId: ans.questionId,
+              isCorrect: ans.isCorrect,
+            })),
+          });
+        }
+
         const userRanking = await tx.ranking.upsert({
           where: { userId },
           update: {
@@ -38,6 +57,15 @@ export class MatchController {
             losses: 0,
           },
         });
+
+        const totalQuestions = answers ? answers.length : 10;
+        await achievementsService.checkMatchAchievements(
+          userId,
+          score,
+          totalQuestions,
+          tx,
+        );
+
         return { match, userRanking };
       });
       return res.status(201).json({
