@@ -29,8 +29,12 @@ export default function RankingScreen() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["global-ranking"],
-    queryFn: () => rankingService.getGlobalRanking(),
+    queryKey: ["ranking", activeTab],
+    queryFn: () => {
+      if (activeTab === "semanal") return rankingService.getWeeklyRanking();
+      if (activeTab === "mensal") return rankingService.getMonthlyRanking();
+      return rankingService.getGlobalRanking();
+    },
   });
 
   const { data: profileData } = useQuery({
@@ -114,10 +118,14 @@ export default function RankingScreen() {
       <View className="items-center mb-4 mt-6">
         <MaterialIcons name="emoji-events" size={48} color="#fea619" />
         <Text className="font-headline-lg font-bold text-primary mt-2">
-          Ranking Global
+          {activeTab === "global" ? "Ranking Global" : activeTab === "semanal" ? "Ranking Semanal" : "Ranking Mensal"}
         </Text>
         <Text className="font-body-md text-on-surface-variant text-center mt-1">
-          Os melhores jogadores da plataforma.
+          {activeTab === "global"
+            ? "Os melhores jogadores da plataforma."
+            : activeTab === "semanal"
+              ? "Os mais ativos nos últimos 7 dias."
+              : "Os líderes do último mês."}
         </Text>
       </View>
 

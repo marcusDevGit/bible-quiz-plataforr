@@ -4,19 +4,29 @@ import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import { quizService } from "../services/quiz.service";
+import { quizService, MatchAnswer } from "../services/quiz.service";
 
 export default function ResultScreen() {
   const router = useRouter();
 
   // Capturamos as variáveis que a tela de Quiz mandou
-  const { score, total, timeElapsed } = useLocalSearchParams();
+  const { score, total, timeElapsed, answers } = useLocalSearchParams();
 
   // Forçamos a tipagem segura para números
   const numScore = Number(score) || 0;
   const numTotal = Number(total) || 10;
   const xpGained = numScore * 15;
   const numTimeElapsed = Number(timeElapsed) || 0;
+
+  // Parse defensivo: se o parâmetro vier quebrado, não crasha o app
+  let parsedAnswers: MatchAnswer[] = [];
+  try {
+    if (typeof answers === "string" && answers.length > 0) {
+      parsedAnswers = JSON.parse(answers);
+    }
+  } catch {
+    console.warn("⚠️ Não foi possível fazer o parse das respostas.");
+  }
 
   const hasSubmitted = useRef(false);
 
@@ -26,14 +36,14 @@ export default function ResultScreen() {
 
     async function saveMatch() {
       try {
-        const response = await quizService.submitMatch(numScore);
+        const response = await quizService.submitMatch(numScore, parsedAnswers);
         console.log("✓ Partida salva no backend:", response);
       } catch (error) {
         console.error("❌ Erro ao salvar partida no backend:", error);
       }
     }
     saveMatch();
-  }, [numScore]);
+  }, [numScore, parsedAnswers]);
 
   // Formata o tempo decorrido em mm:ss
   const formatTime = (seconds: number) => {

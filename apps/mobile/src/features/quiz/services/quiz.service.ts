@@ -15,6 +15,12 @@ interface PaginatedQuestions {
   meta: any;
 }
 
+// Representa a resposta de uma única questão durante a partida
+export interface MatchAnswer {
+  questionId: string;
+  isCorrect: boolean;
+}
+
 export const quizService = {
   async fetchRandomQuestions(limit: number = 10): Promise<QuestionResponse[]> {
     const response = await apiFetch<PaginatedQuestions>("/questions?limit=50");
@@ -28,12 +34,13 @@ export const quizService = {
 
   async submitMatch(
     score: number,
+    answers: MatchAnswer[],
   ): Promise<{ message: string; xpGained: number; totalPoints: number }> {
     return apiFetch<{ message: string; xpGained: number; totalPoints: number }>(
       "/match",
       {
         method: "POST",
-        body: JSON.stringify({ score }),
+        body: JSON.stringify({ score, answers }),
       },
     );
   },

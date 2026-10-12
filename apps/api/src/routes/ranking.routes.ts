@@ -11,4 +11,16 @@ rankingRouter.get(
   rankingController.getGlobalRanking,
 );
 
+rankingRouter.get(
+  "/ranking/weekly",
+  authMiddleware,
+  rankingController.getWeeklyRanking,
+);
+
+rankingRouter.get(
+  "/ranking/monthly",
+  authMiddleware,
+  rankingController.getMonthlyRanking,
+);
+
 export { rankingRouter };

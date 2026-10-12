@@ -15,4 +15,18 @@ export const rankingService = {
     );
     return response.ranking;
   },
+
+  async getWeeklyRanking(): Promise<RankingPlayer[]> {
+    const response = await apiFetch<{ ranking: RankingPlayer[] }>(
+      "/ranking/weekly",
+    );
+    return response.ranking;
+  },
+
+  async getMonthlyRanking(): Promise<RankingPlayer[]> {
+    const response = await apiFetch<{ ranking: RankingPlayer[] }>(
+      "/ranking/monthly",
+    );
+    return response.ranking;
+  },
 };

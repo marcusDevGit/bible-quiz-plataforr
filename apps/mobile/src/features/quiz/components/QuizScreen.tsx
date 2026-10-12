@@ -7,7 +7,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { quizService } from "@/features/quiz/services/quiz.service";
+import { quizService, MatchAnswer } from "@/features/quiz/services/quiz.service";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -19,6 +19,8 @@ export default function QuizScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [score, setScore] = useState(0);
+  // Acumula as respostas de cada questão para enviar ao backend
+  const [answers, setAnswers] = useState<MatchAnswer[]>([]);
 
   const {
     data: questions,
@@ -58,10 +60,19 @@ export default function QuizScreen() {
     let newScore = score;
 
     const chosenAlternative = alternatives[selectedOption];
-    if (chosenAlternative && chosenAlternative.isCorrect) {
+    const isCorrect = !!(chosenAlternative && chosenAlternative.isCorrect);
+
+    if (isCorrect) {
       newScore = score + 1;
       setScore(newScore);
     }
+
+    // Registra a resposta da questão atual no histórico
+    const updatedAnswers: MatchAnswer[] = [
+      ...answers,
+      { questionId: currentQuestion.id, isCorrect },
+    ];
+    setAnswers(updatedAnswers);
 
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex(currentIndex + 1);
@@ -74,12 +85,20 @@ export default function QuizScreen() {
           score: newScore,
           total: questions.length,
           timeElapsed: finalTimeElapsed,
+          answers: JSON.stringify(updatedAnswers),
         },
       });
     }
   };
 
   const handleSkip = () => {
+    // Pulo sempre conta como resposta errada
+    const updatedAnswers: MatchAnswer[] = [
+      ...answers,
+      { questionId: currentQuestion.id, isCorrect: false },
+    ];
+    setAnswers(updatedAnswers);
+
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex(currentIndex + 1);
       setSelectedOption(null);
@@ -91,6 +110,7 @@ export default function QuizScreen() {
           score,
           total: questions.length,
           timeElapsed: finalTimeElapsed,
+          answers: JSON.stringify(updatedAnswers),
         },
       });
     }

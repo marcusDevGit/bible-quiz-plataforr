@@ -275,9 +275,19 @@ export default function ProfileScreen() {
 
             {/* Botões de Ação */}
             <View className="gap-3 mt-4">
-              <TouchableOpacity className="w-full bg-primary h-12 rounded-full flex-row items-center justify-center gap-2">
-                <MaterialIcons name="edit" size={20} color="#ffffff" />
+              <TouchableOpacity
+                onPress={() => router.push("/achievements")}
+                className="w-full bg-primary h-12 rounded-full flex-row items-center justify-center gap-2"
+              >
+                <MaterialIcons name="emoji-events" size={20} color="#ffffff" />
                 <Text className="text-white font-bold text-sm">
+                  Ver Conquistas
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity className="w-full bg-surface-container-high h-12 rounded-full flex-row items-center justify-center gap-2">
+                <MaterialIcons name="edit" size={20} color="#191c1e" />
+                <Text className="text-on-surface font-bold text-sm">
                   Editar Perfil
                 </Text>
               </TouchableOpacity>

@@ -14,7 +14,7 @@ export class AchievementsController {
       }
 
       const list = await achievementsService.getAchievementsList(userId);
-      return res.status(200).json(list);
+      return res.status(200).json({ achievements: list });
     } catch (error: any) {
       console.error("Erro ao obter conquistas:", error);
       return res
