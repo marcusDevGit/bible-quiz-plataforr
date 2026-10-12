@@ -20,7 +20,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.biblequizmobile"
     },
     "web": {
       "favicon": "./assets/favicon.png",
