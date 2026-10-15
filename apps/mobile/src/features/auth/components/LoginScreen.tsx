@@ -23,15 +23,20 @@ export default function LoginScreen() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const loginMutation = useMutation({
-    mutationFn: () => authService.Login({ email, password }),
+    mutationFn: () =>
+      authService.Login({
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
+      }),
     onSuccess: (data) => {
       console.log("Login realizado com sucesso!", data.user.name);
-      router.replace("/");
+      router.replace("/(tabs)");
     },
     onError: (error: any) => {
       setErrorMsg(error.message || "Credenciais inválidas. Tente novamente.");
     },
   });
+
 
   const handleLogin = () => {
     setErrorMsg("");
@@ -43,7 +48,7 @@ export default function LoginScreen() {
   };
 
   const handleGuestMode = () => {
-    router.replace("/");
+    router.replace("/(tabs)");
   };
 
   return (
@@ -139,7 +144,7 @@ export default function LoginScreen() {
           {/* Campo E-mail */}
           <View className="mb-4">
             <View className="flex-row justify-between items-center mb-1.5">
-              <Text className="text-xs font-bold text-on-surface">E-mail ou Usuário</Text>
+              <Text className="text-xs font-bold text-on-surface">E-mail</Text>
             </View>
 
             <View className="flex-row items-center bg-surface-container-low rounded-xl px-3 py-3 border border-outline-variant/30">
@@ -158,39 +163,39 @@ export default function LoginScreen() {
 
           {/* Campo Senha */}
           <View className="mb-4">
-              <Text className="text-xs font-bold text-on-surface mb-1.5">Senha</Text>
+            <Text className="text-xs font-bold text-on-surface mb-1.5">Senha</Text>
 
-              <View className="flex-row items-center bg-surface-container-low rounded-xl px-3 py-3 border border-outline-variant/30">
-                <MaterialIcons name="lock-outline" size={20} color="#757682" />
-                <TextInput
-                  className="flex-1 ml-2.5 text-on-surface text-sm"
-                  placeholder="Sua senha "
-                  placeholderTextColor="#757682"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
+            <View className="flex-row items-center bg-surface-container-low rounded-xl px-3 py-3 border border-outline-variant/30">
+              <MaterialIcons name="lock-outline" size={20} color="#757682" />
+              <TextInput
+                className="flex-1 ml-2.5 text-on-surface text-sm"
+                placeholder="Sua senha "
+                placeholderTextColor="#757682"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <MaterialIcons
+                  name={showPassword ? "visibility" : "visibility-off"}
+                  size={20}
+                  color="#757682"
                 />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <MaterialIcons
-                    name={showPassword ? "visibility" : "visibility-off"}
-                    size={20}
-                    color="#757682"
-                  />
-                </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
+            </View>
 
-              <View className="flex-row justify-between items-center mt-3">
-                <TouchableOpacity className="flex-row items-center active:opacity-80" onPress={() => setRememberMe((prev) => !prev)}>
-                  <MaterialIcons name={rememberMe ? "check-box" : "check-box-outline-blank"} size={20} color={rememberMe ? "#00236f" : "#757682"} />
-                  <Text className="text-xs text-on-surface ml-1.5 font-medium">Lembrar-me</Text>
-                </TouchableOpacity>
+            <View className="flex-row justify-between items-center mt-3">
+              <TouchableOpacity className="flex-row items-center active:opacity-80" onPress={() => setRememberMe((prev) => !prev)}>
+                <MaterialIcons name={rememberMe ? "check-box" : "check-box-outline-blank"} size={20} color={rememberMe ? "#00236f" : "#757682"} />
+                <Text className="text-xs text-on-surface ml-1.5 font-medium">Lembrar-me</Text>
+              </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => console.log("Recuperar")}>
-                  <Text className="text-xs font-semibold text-primary">Recuperar senha</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity onPress={() => console.log("Recuperar")}>
+                <Text className="text-xs font-semibold text-primary">Recuperar senha</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           {/* Mensagem de Erro */}
           {errorMsg ? (

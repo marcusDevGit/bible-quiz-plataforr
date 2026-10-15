@@ -1,7 +1,8 @@
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3001";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.100.127:3001"
+// "https://spotty-seals-think.loca.lt";
 export const TOKEN_KEY = "mobile_jwt_token";
 
 export async function apiFetch<T>(
@@ -9,6 +10,8 @@ export async function apiFetch<T>(
   options: RequestInit = {},
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+
+  console.log(`🌐 [API Request] ${options.method || "GET"} -> ${url}`);
 
   // Tratativa Multi-Plataforma para o Token!
   let token = null;
@@ -28,7 +31,11 @@ export async function apiFetch<T>(
   const response = await fetch(url, { ...options, headers });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Erro na requisição à API");
+    const errorMessage =
+      errorData.message ||
+      (errorData.errors && errorData.errors[0]?.message) ||
+      "Erro na requisição à API";
+    throw new Error(errorMessage);
   }
   return response.json();
 }
