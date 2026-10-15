@@ -19,6 +19,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
   const loginMutation = useMutation({
@@ -48,14 +49,15 @@ export default function LoginScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface ">
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
-        className="px-margin-mobile py-6"
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 48 }}
+        className="px-margin-mobile py-4"
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         {/* 1. Ambient Glow & Branding */}
         <View className="items-center relative mb-6 pt-4">
           {/* Luz difusa do fundo */}
-           {/* <LinearGradient
+          {/* <LinearGradient
             colors={[
               "rgba(220, 225, 255, 0.7)", // Azul suave (primary-fixed)
               "rgba(255, 221, 184, 0.4)", // Dourado sutil (secondary-fixed)
@@ -71,8 +73,8 @@ export default function LoginScreen() {
               borderRadius: 32,
             }}
           /> */}
-           {/* Luz 1: Banho azul no topo desvanecendo para baixo (sem bordas) */}
-           <LinearGradient
+          {/* Luz 1: Banho azul no topo desvanecendo para baixo (sem bordas) */}
+          <LinearGradient
             colors={["rgba(220, 225, 255, 0.6)", "rgba(247, 249, 251, 0)"]}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
@@ -90,10 +92,10 @@ export default function LoginScreen() {
             colors={[
               "rgba(255, 185, 95, 0.5)", // Âmbar / Laranja
               "rgba(255, 221, 184, 0.2)",
-              "transparent",              // Dissolve sem bordas
+              "transparent", // Dissolve sem bordas
             ]}
-            start={{ x: 1, y: 0 }}        // Nasce exatamente no canto superior direito
-            end={{ x: 0, y: 0.8 }}        // Dissipa em direção ao centro
+            start={{ x: 1, y: 0 }} // Nasce exatamente no canto superior direito
+            end={{ x: 0, y: 0.8 }} // Dissipa em direção ao centro
             style={{
               position: "absolute",
               top: -30,
@@ -136,9 +138,8 @@ export default function LoginScreen() {
         <View className="w-full bg-surface-container-lowest rounded-2xl p-5 shadow-sm shadow-primary/5 mb-4 border border-outline-variant/20">
           {/* Campo E-mail */}
           <View className="mb-4">
-          <View className="flex-row justify-between items-center mb-1.5">
-            <Text>E-mail ou Usuário</Text>
-           
+            <View className="flex-row justify-between items-center mb-1.5">
+              <Text className="text-xs font-bold text-on-surface">E-mail ou Usuário</Text>
             </View>
 
             <View className="flex-row items-center bg-surface-container-low rounded-xl px-3 py-3 border border-outline-variant/30">
@@ -157,32 +158,39 @@ export default function LoginScreen() {
 
           {/* Campo Senha */}
           <View className="mb-4">
-            <View className="flex-row justify-between items-center mb-1.5">
-              <Text className="text-xs font-bold text-on-surface">Senha</Text>
-              <TouchableOpacity>
-                <Text className="text-xs font-semibold text-primary">
-                  Esqueceu a senha?
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <View className="flex-row items-center bg-surface-container-low rounded-xl px-3 py-3 border border-outline-variant/30">
-              <MaterialIcons name="lock-outline" size={20} color="#757682" />
-              <TextInput
-                className="flex-1 ml-2.5 text-on-surface text-sm"
-                placeholder="Sua senha secreta"
-                placeholderTextColor="#757682"
-                secureTextEntry={!showPassword}
-                value={password}
-                onChangeText={setPassword}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <MaterialIcons
-                  name={showPassword ? "visibility" : "visibility-off"}
-                  size={20}
-                  color="#757682"
+              <Text className="text-xs font-bold text-on-surface mb-1.5">Senha</Text>
+
+              <View className="flex-row items-center bg-surface-container-low rounded-xl px-3 py-3 border border-outline-variant/30">
+                <MaterialIcons name="lock-outline" size={20} color="#757682" />
+                <TextInput
+                  className="flex-1 ml-2.5 text-on-surface text-sm"
+                  placeholder="Sua senha "
+                  placeholderTextColor="#757682"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
                 />
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <MaterialIcons
+                    name={showPassword ? "visibility" : "visibility-off"}
+                    size={20}
+                    color="#757682"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View className="flex-row justify-between items-center mt-3">
+                <TouchableOpacity className="flex-row items-center active:opacity-80" onPress={() => setRememberMe((prev) => !prev)}>
+                  <MaterialIcons name={rememberMe ? "check-box" : "check-box-outline-blank"} size={20} color={rememberMe ? "#00236f" : "#757682"} />
+                  <Text className="text-xs text-on-surface ml-1.5 font-medium">Lembrar-me</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => console.log("Recuperar")}>
+                  <Text className="text-xs font-semibold text-primary">Recuperar senha</Text>
+                </TouchableOpacity>
+              </View>
           </View>
           {/* Mensagem de Erro */}
           {errorMsg ? (
