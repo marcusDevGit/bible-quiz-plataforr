@@ -1,3 +1,4 @@
+import BrandLogo from "@/components/common/BrandLogo";
 import React, { useState } from "react";
 import {
   ScrollView,
@@ -116,12 +117,7 @@ export default function RegisterScreem() {
         {/* 2. Header & Branding */}
         <View className="items-center mb-5">
           <View className="relative mb-3">
-            <View className="w-16 h-16 bg-surface-container-lowest rounded-2xl items-center justify-center shadow-sm shadow-primary/10 border border-outline-variant/30">
-              <MaterialIcons name="menu-book" size={48} color="#00236f" />
-            </View>
-            <View className="absolute -bottom-1 -right-1 w-5 h-5 bg-secondary-container rounded-full items-center justify-center border-2 border-surface">
-              <MaterialIcons name="bolt" size={12} color="#ffffff" />
-            </View>
+            <BrandLogo size={68} />
           </View>
           <View className="flex-row items-center bg-primary-fixed px-4 py-2 rounded-full mb-3 border border-primary/10 shadow-xs">
             <MaterialIcons name="auto-awesome" size={16} color="#00236f" />

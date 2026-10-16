@@ -1,8 +1,21 @@
 import { Tabs } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Platform } from "react-native";
+import React from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+
+  const bottomPadding =
+    insets.bottom > 0
+      ? insets.bottom + 8
+      : Platform.OS === "android"
+        ? 16
+        : 12;
+
+  const tabHeight = 56 + bottomPadding;
+
   return (
     <Tabs
       screenOptions={{
@@ -10,9 +23,9 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: "#ffffff",
           borderTopColor: "#e6e8ea",
-          height: Platform.OS === "ios" ? 85 : 65,
-          paddingBottom: Platform.OS === "ios" ? 25 : 10,
-          paddingTop: 10,
+          height: tabHeight,
+          paddingBottom: bottomPadding,
+          paddingTop: 8,
           elevation: 10,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: -2 },

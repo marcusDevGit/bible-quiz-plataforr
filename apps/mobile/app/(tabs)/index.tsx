@@ -3,26 +3,23 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  useWindowDimensions,
 } from "react-native";
 import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import React from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const TOPBAR_HEIGHT = 64;
-const TABBAR_HEIGHT = 65;
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { height } = useWindowDimensions();
-
-  const scrollAreaHeight = height - TOPBAR_HEIGHT - TABBAR_HEIGHT;
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f7f9fb" }}>
       {/* TopAppBar — FIXO, fora do ScrollView */}
       <View
-        style={{ height: TOPBAR_HEIGHT }}
-        className="flex-row justify-between items-center px-5 w-full bg-surface border-b border-outline-variant/30"
+        style={{ paddingTop: insets.top, height: 64 + insets.top, backgroundColor: "#ffffff" }}
+        className="flex-row justify-between items-center px-5 w-full  border-b border-outline-variant/30"
       >
         {/* Leading: Avatar & Level */}
         <View className="relative flex-row items-center">
@@ -74,9 +71,9 @@ export default function DashboardScreen() {
 
       {/* Main Content Canvas — ScrollView com altura calculada */}
       <ScrollView
-        style={{ height: scrollAreaHeight }}
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}
+        contentContainerStyle={{ paddingBottom: 32, paddingTop: 16 }}
       >
         <View className="px-5">
           {/* Hero Section */}
