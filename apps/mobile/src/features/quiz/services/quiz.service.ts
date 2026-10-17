@@ -5,6 +5,11 @@ export interface QuestionResponse {
   title: string;
   difficulty: "EASY" | "MEDIUM" | "HARD";
   categoryId: string;
+  category?: {
+    id: string;
+    name: string;
+    icon: string;
+  };
   reference: string;
   explanation: string;
   alternatives: { id?: string; description: string; isCorrect: boolean }[];

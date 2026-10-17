@@ -1,26 +1,32 @@
-import { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Alert
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { quizService, MatchAnswer } from "@/features/quiz/services/quiz.service";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const SECONDS_PER_QUESTION = 15;
+const LETTERS = ["A", "B", "C", "D"];
 
 export default function QuizScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [startTime] = useState(() => Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [score, setScore] = useState(0);
-  // Acumula as respostas de cada questão para enviar ao backend
   const [answers, setAnswers] = useState<MatchAnswer[]>([]);
+  const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
 
   const {
     data: questions,
@@ -31,22 +37,124 @@ export default function QuizScreen() {
     queryFn: () => quizService.fetchRandomQuestions(10),
   });
 
+  const finishQuiz = useCallback(
+    (finalScore: number, finalAnswers: MatchAnswer[]) => {
+      const finalTimeElapsed = Math.round((Date.now() - startTime) / 1000);
+      router.replace({
+        pathname: "/result",
+        params: {
+          score: finalScore,
+          total: questions?.length || 10,
+          timeElapsed: finalTimeElapsed,
+          answers: JSON.stringify(finalAnswers),
+        },
+      });
+    },
+    [questions, router, startTime]
+  );
+
+  const handleTimeoutOrSkip = useCallback(() => {
+    if (!questions || !questions[currentIndex]) return;
+    const currentQ = questions[currentIndex];
+
+    const updatedAnswers: MatchAnswer[] = [
+      ...answers,
+      { questionId: currentQ.id, isCorrect: false },
+    ];
+    setAnswers(updatedAnswers);
+
+    if (currentIndex + 1 < questions.length) {
+      setCurrentIndex((prev) => prev + 1);
+      setSelectedOption(null);
+      setTimeLeft(SECONDS_PER_QUESTION)
+    } else {
+      finishQuiz(score, updatedAnswers);
+    }
+  }, [answers, currentIndex, finishQuiz, questions, score])
+
+  useEffect(() => {
+    if (isLoading || isError || !questions || questions.length === 0) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleTimeoutOrSkip();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [currentIndex, handleTimeoutOrSkip, isError, isLoading, questions]);
+
+  // Confirmar resposta selecionada
+  const handleConfirm = () => {
+    if (selectedOption === null || !questions) return;
+    const currentQ = questions[currentIndex];
+    const alternatives = currentQ.alternatives || [];
+    const chosenAlternative = alternatives[selectedOption];
+    const isCorrect = !!(chosenAlternative && chosenAlternative.isCorrect);
+
+    const newScore = isCorrect ? score + 1 : score;
+    if (isCorrect) {
+      setScore(newScore);
+    }
+
+    const updatedAnswers: MatchAnswer[] = [
+      ...answers,
+      { questionId: currentQ.id, isCorrect },
+    ];
+    setAnswers(updatedAnswers);
+
+    if (currentIndex + 1 < questions.length) {
+      setCurrentIndex((prev) => prev + 1);
+      setSelectedOption(null);
+      setTimeLeft(SECONDS_PER_QUESTION);
+    } else {
+      finishQuiz(newScore, updatedAnswers);
+    }
+  };
+
+  // Diálogo de confirmação para sair
+  const handleExit = () => {
+    Alert.alert(
+      "Sair da Partida?",
+      "Se você sair agora, seu progresso nesta partida será perdido.",
+      [
+        { text: "Continuar Jogando", style: "cancel" },
+        {
+          text: "Sair",
+          style: "destructive",
+          onPress: () => router.replace("/(tabs)"),
+        },
+      ]
+    );
+  };
+
+
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-surface-container-highest">
         <ActivityIndicator size="large" color="#00236f" />
         <Text className="mt-4 text-on-surface font-title-md">
-          Preparando o desafio
+          Preparando as Escrituras...
         </Text>
       </View>
     );
   }
+
   if (isError || !questions || questions.length === 0) {
     return (
       <View className="flex-1 items-center justify-center bg-surface-container-highest p-8">
+        <MaterialIcons name="error-outline" size={48} color="#ba1a1a" />
         <Text className="text-error font-headline-md text-center">
           Banco de perguntas vazio ou erro de conexão
         </Text>
+        <TouchableOpacity className="mt-6 px-6 py-3 bg-primary rounded-full" onPress={() => router.back()}>
+          <Text className="text-white font-body">Voltar</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -54,152 +162,220 @@ export default function QuizScreen() {
   const currentQuestion = questions[currentIndex];
   const alternatives = currentQuestion.alternatives || [];
   const progressPercentage = ((currentIndex + 1) / questions.length) * 100;
+  const isTimeCritical = timeLeft <= 5;
 
-  const handleConfirm = () => {
-    if (selectedOption === null) return;
-    let newScore = score;
 
-    const chosenAlternative = alternatives[selectedOption];
-    const isCorrect = !!(chosenAlternative && chosenAlternative.isCorrect);
 
-    if (isCorrect) {
-      newScore = score + 1;
-      setScore(newScore);
-    }
-
-    // Registra a resposta da questão atual no histórico
-    const updatedAnswers: MatchAnswer[] = [
-      ...answers,
-      { questionId: currentQuestion.id, isCorrect },
-    ];
-    setAnswers(updatedAnswers);
-
-    if (currentIndex + 1 < questions.length) {
-      setCurrentIndex(currentIndex + 1);
-      setSelectedOption(null);
-    } else {
-      const finalTimeElapsed = Math.round((Date.now() - startTime) / 1000);
-      router.replace({
-        pathname: "/result",
-        params: {
-          score: newScore,
-          total: questions.length,
-          timeElapsed: finalTimeElapsed,
-          answers: JSON.stringify(updatedAnswers),
-        },
-      });
-    }
-  };
-
-  const handleSkip = () => {
-    // Pulo sempre conta como resposta errada
-    const updatedAnswers: MatchAnswer[] = [
-      ...answers,
-      { questionId: currentQuestion.id, isCorrect: false },
-    ];
-    setAnswers(updatedAnswers);
-
-    if (currentIndex + 1 < questions.length) {
-      setCurrentIndex(currentIndex + 1);
-      setSelectedOption(null);
-    } else {
-      const finalTimeElapsed = Math.round((Date.now() - startTime) / 1000);
-      router.replace({
-        pathname: "/result",
-        params: {
-          score,
-          total: questions.length,
-          timeElapsed: finalTimeElapsed,
-          answers: JSON.stringify(updatedAnswers),
-        },
-      });
-    }
-  };
   return (
-    <View className="flex-1 bg-surface-container-highest">
-      <View className="w-full h-full flex flex-col bg-background relative shadow-2xl overflow-hidden">
-        {/* Cabeçalho da Partida */}
-        <View className="flex flex-col px-margin-mobile pt-16 pb-4 bg-surface z-10">
-          <View className="flex-row items-center justify-between h-16">
+    <View style={{ flex: 1, backgroundColor: "#f7f9fb" }}>
+      <View className="w-full h-full flex flex-col justify-between">
+
+        {/* TopBar & Progresso */}
+        <View
+          style={{
+            paddingTop: insets.top + 8,
+            backgroundColor: "#ffffff",
+            borderBottomWidth: 1,
+            borderBottomColor: "#e6e8ea"
+          }}
+          className="px-5 pb-3 z-10"
+        >
+          <View className="flex-row items-center justify-between h-14">
+            {/* Botão Fechar com Confirmação */}
             <TouchableOpacity
-              className="w-10 h-10 items-center justify-center rounded-full bg-surface-container-lowest border border-surface-variant"
-              onPress={() => router.back()}
+              style={{
+                backgroundColor: "#ffffff",
+                borderColor: "#c5c5d3",
+                borderWidth: 1,
+              }}
+              className="w-10 h-10 items-center justify-center rounded-full"
+              onPress={handleExit}
+              activeOpacity={0.7}
             >
               <MaterialIcons name="close" size={20} color="#444651" />
             </TouchableOpacity>
-            <View className="flex-row items-center gap-2 bg-surface-container-lowest px-4 py-2 rounded-full border border-surface-variant">
-              <MaterialIcons name="timer" size={20} color="#fea619" />
-              <Text className="font-title-md text-primary">15s</Text>
+
+            {/* Cronômetro Dinâmico */}
+            <View
+              style={{
+                backgroundColor: isTimeCritical ? "#fef2f2" : "#ffffff",
+                borderColor: isTimeCritical ? "#fca5a5" : "#e0e3eb",
+                borderWidth: 1,
+              }}
+              className="flex-row items-center gap-2 px-4 py-1.5 rounded-full"
+            >
+              <MaterialIcons
+                name="timer"
+                size={18}
+                color={isTimeCritical ? "#ba1a1a" : "#fea619"}
+              />
+              <Text
+                style={{ color: isTimeCritical ? "#ba1a1a" : "#00236f" }}
+                className="font-bold text-sm"
+              >
+                {timeLeft}s
+              </Text>
             </View>
-            <View className="w-10 items-end">
-              <Text className="font-label-lg text-on-surface-variant">
-                {currentIndex + 1}/{questions.length}
+
+            {/* Contador de Perguntas */}
+            <View
+              style={{
+                backgroundColor: "#f0f2f5",
+                borderColor: "#e0e3eb",
+                borderWidth: 1,
+              }}
+              className="px-3 py-1 rounded-full"
+            >
+              <Text className="font-bold text-xs text-on-surface-variant">
+                {currentIndex + 1} de {questions.length}
               </Text>
             </View>
           </View>
-
-          <View className="w-full h-3 bg-surface-variant rounded-full mt-2 overflow-hidden shadow-inner">
+          {/* Barra de Progresso */}
+          <View
+            style={{ backgroundColor: "#e6e8ea" }}
+            className="w-full h-2 rounded-full mt-3 overflow-hidden"
+          >
             <View
               className="h-full bg-secondary-container rounded-full"
               style={{ width: `${progressPercentage}%` }}
             />
           </View>
         </View>
-        {/* Área Central: Pergunta e Alternativas */}
+        {/* Área Central: Categoria, Pergunta e Alternativas */}
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            paddingHorizontal: 20,
+            paddingVertical: 24,
+          }}
           showsVerticalScrollIndicator={false}
-          className="flex-1 flex-col px-margin-mobile py-6 z-0"
         >
-          <View className="mb-10 mt-4 px-2">
-            <Text className="font-headline-md text-on-surface text-center leading-tight">
-              {currentQuestion.title}
-            </Text>
-          </View>
-          <View className="flex-col gap-4 mb-4">
-            {alternatives.map((alt: any, index: any) => {
-              const isSelected = selectedOption === index;
-              return (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => setSelectedOption(index)}
-                  className={`w-full flex-row items-center justify-between p-5 rounded-2xl border-2 transition-all ${
-                    isSelected
-                      ? "border-primary bg-primary-fixed-dim"
-                      : "border-transparent bg-surface-container-lowest"
-                  }`}
+          <View className="w-full max-w-xl mx-auto">
+            {/* Badges de Metadados: Categoria e Referência */}
+            <View className="flex-row items-center justify-center gap-2 mb-4">
+              {currentQuestion.category && (
+                <View
+                  style={{ backgroundColor: "#e8edff" }}
+                  className="flex-row items-center gap-1 px-3 py-1 rounded-full"
                 >
-                  <Text
-                    className={`font-title-md pl-2 flex-1 ${isSelected ? "text-on-primary-fixed" : "text-on-surface"}`}
-                  >
-                    {alt.description}
+                  <MaterialIcons name="local-offer" size={12} color="#00236f" />
+                  <Text className="text-primary font-bold text-xs uppercase tracking-wider">
+                    {currentQuestion.category.name}
                   </Text>
-                  <MaterialIcons
-                    name={
-                      isSelected ? "check-circle" : "radio-button-unchecked"
-                    }
-                    size={28}
-                    color={isSelected ? "#00236f" : "#c5c5d3"}
-                  />
-                </TouchableOpacity>
-              );
-            })}
+                </View>
+              )}
+              {currentQuestion.reference && (
+                <View
+                  style={{ backgroundColor: "#ffeed4" }}
+                  className="flex-row items-center gap-1 px-3 py-1 rounded-full"
+                >
+                  <FontAwesome5 name="bible" size={10} color="#684000" />
+                  <Text className="text-on-secondary-container font-semibold text-xs">
+                    {currentQuestion.reference}
+                  </Text>
+                </View>
+              )}
+            </View>
+            {/* Texto da Questão */}
+            <View className="mb-8">
+              <Text className="text-2xl font-bold text-on-surface text-center leading-snug">
+                {currentQuestion.title}
+              </Text>
+            </View>
+            {/* Alternativas */}
+            <View className="flex-col gap-3">
+              {alternatives.map((alt, index) => {
+                const isSelected = selectedOption === index;
+                const letter = LETTERS[index] || `${index + 1}`;
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedOption(index)}
+                    style={{
+                      borderColor: isSelected ? "#00236f" : "#e0e3eb",
+                      backgroundColor: isSelected ? "#eef2ff" : "#ffffff",
+                      borderWidth: 2,
+                    }}
+                    className="w-full flex-row items-center justify-between p-4 rounded-2xl"
+                  >
+                    {/* Badge da Letra (A, B, C, D) */}
+                    <View
+                      style={{
+                        backgroundColor: isSelected ? "#00236f" : "#f0f2f5",
+                      }}
+                      className="w-9 h-9 rounded-xl items-center justify-center mr-3"
+                    >
+                      <Text
+                        style={{
+                          color: isSelected ? "#ffffff" : "#444651",
+                        }}
+                        className="font-bold text-sm"
+                      >
+                        {letter}
+                      </Text>
+                    </View>
+                    {/* Descrição da Opção */}
+                    <Text
+                      style={{
+                        color: isSelected ? "#00236f" : "#1c1b1f",
+                        fontWeight: isSelected ? "600" : "500",
+                      }}
+                      className="text-base flex-1"
+                    >
+                      {alt.description}
+                    </Text>
+                    {/* Indicador de Seleção */}
+                    <MaterialIcons
+                      name={
+                        isSelected ? "check-circle" : "radio-button-unchecked"
+                      }
+                      size={24}
+                      color={isSelected ? "#00236f" : "#c5c5d3"}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
         </ScrollView>
-        {/* Rodapé: Pular e Confirmar */}
-        <View className="px-margin-mobile pt-4 pb-12 bg-surface border-t border-surface-variant/50 flex-row gap-4 z-10">
+        {/* Rodapé: Pular e Confirmar com Safe Area Insets */}
+        <View
+          style={{
+            paddingBottom: Math.max(insets.bottom, 16),
+            backgroundColor: "#ffffff",
+            borderTopWidth: 1,
+            borderTopColor: "#e6e8ea",
+          }}
+          className="px-5 pt-3 flex-row gap-3 z-10"
+        >
           <TouchableOpacity
-            className="flex-1 py-4 px-2 rounded-full border-2 border-outline-variant items-center justify-center"
-            onPress={handleSkip}
+            style={{
+              backgroundColor: "#ffffff",
+              borderColor: "#c5c5d3",
+              borderWidth: 1,
+            }}
+            className="flex-1 py-4 px-2 rounded-2xl items-center justify-center"
+            onPress={handleTimeoutOrSkip}
+            activeOpacity={0.7}
           >
-            <Text className="text-on-surface-variant font-label-lg">Pular</Text>
+            <Text className="text-on-surface-variant font-bold text-sm">
+              Pular
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            className={`flex-[2] py-4 px-6 rounded-full items-center justify-center flex-row gap-2 ${selectedOption !== null ? "bg-primary" : "bg-primary/50"}`}
+            style={{
+              backgroundColor: selectedOption !== null ? "#00236f" : "#8ea4d2",
+            }}
+            className="flex-[2] py-4 px-6 rounded-2xl items-center justify-center flex-row gap-2"
             onPress={handleConfirm}
             disabled={selectedOption === null}
+            activeOpacity={0.8}
           >
-            <Text className="text-on-primary font-label-lg">Confirmar</Text>
+            <Text className="text-white font-bold text-sm">Confirmar</Text>
             <MaterialIcons name="arrow-forward" size={18} color="#ffffff" />
           </TouchableOpacity>
         </View>
@@ -207,4 +383,5 @@ export default function QuizScreen() {
       <StatusBar style="dark" />
     </View>
   );
+
 }
