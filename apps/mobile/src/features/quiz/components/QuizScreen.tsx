@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const SECONDS_PER_QUESTION = 15;
+const SECONDS_PER_QUESTION = 30;
 const LETTERS = ["A", "B", "C", "D"];
 
 export default function QuizScreen() {

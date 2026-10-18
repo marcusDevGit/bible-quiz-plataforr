@@ -1,7 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.100.127:3001"
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.18.218:3001"
 // "https://spotty-seals-think.loca.lt";
 export const TOKEN_KEY = "mobile_jwt_token";
 
@@ -9,7 +9,8 @@ export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
+  const url = `${API_BASE_URL}${cleanEndpoint}`;
 
   console.log(`🌐 [API Request] ${options.method || "GET"} -> ${url}`);
 
