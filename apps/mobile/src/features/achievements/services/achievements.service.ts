@@ -12,14 +12,15 @@ export type Rarity =
 export interface Achievement {
   id: string;
   code: string;
-  title: string;
+  name: string;
+  title?: string;
   description: string;
   rarity: Rarity;
   xpReward: number;
-  iconName: string;
-  // Presente quando o usuário desbloqueou a conquista
+  icon?: string;
+  iconName?: string;
+  unlocked?: boolean;
   unlockedAt?: string | null;
-  // Presente quando a conquista tem progresso gradual
   progress?: number | null;
   goal?: number | null;
 }
