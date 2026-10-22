@@ -1,7 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.18.218:3001"
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3001"
 // "https://spotty-seals-think.loca.lt";
 export const TOKEN_KEY = "mobile_jwt_token";
 

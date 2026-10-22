@@ -18,6 +18,7 @@ interface Room {
   questions: any[];
   currentIndex: number;
   answerCount: number;
+  roundTimeout?: NodeJS.Timeout;
 }
 
 // Em memória - gerenciamento das salas de jogo
@@ -38,81 +39,136 @@ function generateRoomCode(): string {
 
 export function registerMultiplayerHandlers(io: Server, socket: Socket) {
   // ─── CRIAR SALA ────────────────────────────────────────────────────────────
-  socket.on("create_room", async (data: { userId: string; name: string; avatar: string | null }) => {
-    try {
-      const { userId, name, avatar } = data;
-      const code = generateRoomCode();
+  socket.on(
+    "create_room",
+    async (data: { userId: string; name: string; avatar: string | null }) => {
+      try {
+        const { userId, name, avatar } = data;
+        const code = generateRoomCode();
 
-      const newPlayer: Player = {
-        socketId: socket.id,
-        userId,
-        name,
-        avatar,
-        ready: false,
-        score: 0,
-        answers: [],
-      };
+        const newPlayer: Player = {
+          socketId: socket.id,
+          userId,
+          name,
+          avatar,
+          ready: false,
+          score: 0,
+          answers: [],
+        };
 
-      const newRoom: Room = {
-        code,
-        players: [newPlayer],
-        status: "waiting",
-        questions: [],
-        currentIndex: 0,
-        answerCount: 0,
-      };
+        const newRoom: Room = {
+          code,
+          players: [newPlayer],
+          status: "waiting",
+          questions: [],
+          currentIndex: 0,
+          answerCount: 0,
+        };
 
-      rooms.set(code, newRoom);
-      socket.join(code);
+        rooms.set(code, newRoom);
+        socket.join(code);
 
-      console.log(`🏠 Sala criada: ${code} por ${name}`);
-      socket.emit("room_created", newRoom);
-    } catch (error) {
-      console.error("Erro ao criar sala:", error);
-      socket.emit("error", "Erro ao criar sala");
-    }
-  });
+        console.log(`🏠 Sala criada: ${code} por ${name}`);
+        socket.emit("room_created", newRoom);
+      } catch (error) {
+        console.error("Erro ao criar sala:", error);
+        socket.emit("error", "Erro ao criar sala");
+      }
+    },
+  );
 
   // ─── ENTRAR EM SALA ────────────────────────────────────────────────────────
-  socket.on("join_room", (data: { code: string; userId: string; name: string; avatar: string | null }) => {
+  socket.on(
+    "join_room",
+    (data: {
+      code: string;
+      userId: string;
+      name: string;
+      avatar: string | null;
+    }) => {
+      try {
+        const { code, userId, name, avatar } = data;
+        const upperCode = code.toUpperCase();
+        const room = rooms.get(upperCode);
+
+        if (!room) {
+          return socket.emit("error", "Sala não encontrada");
+        }
+        if (room.status !== "waiting") {
+          return socket.emit("error", "Jogo já está em andamento");
+        }
+        if (room.players.length >= 2) {
+          return socket.emit("error", "Sala cheia");
+        }
+
+        // Evita o mesmo usuário logado em duas abas entrarem como jogadores diferentes
+        if (room.players.some((p) => p.userId === userId)) {
+          return socket.emit("error", "Você já está na sala");
+        }
+
+        const newPlayer: Player = {
+          socketId: socket.id,
+          userId,
+          name,
+          avatar,
+          ready: false,
+          score: 0,
+          answers: [],
+        };
+
+        room.players.push(newPlayer);
+        socket.join(upperCode);
+
+        console.log(`👤 Jogador ${name} entrou na sala ${upperCode}`);
+        io.to(upperCode).emit("room_updated", room);
+      } catch (error) {
+        console.error("Erro ao entrar na sala:", error);
+        socket.emit("error", "Erro ao entrar na sala");
+      }
+    },
+  );
+  // ─── CONSULTAR / SINCRONIZAR SALA ──────────────────────────────────────────
+  socket.on("get_room", (data: { code: string }) => {
     try {
-      const { code, userId, name, avatar } = data;
-      const upperCode = code.toUpperCase();
+      const upperCode = data.code.toUpperCase();
       const room = rooms.get(upperCode);
 
       if (!room) {
         return socket.emit("error", "Sala não encontrada");
       }
-      if (room.status !== "waiting") {
-        return socket.emit("error", "Jogo já está em andamento");
-      }
-      if (room.players.length >= 2) {
-        return socket.emit("error", "Sala cheia");
-      }
-
-      // Evita o mesmo usuário logado em duas abas entrarem como jogadores diferentes
-      if (room.players.some((p) => p.userId === userId)) {
-        return socket.emit("error", "Você já está na sala");
-      }
-
-      const newPlayer: Player = {
-        socketId: socket.id,
-        userId,
-        name,
-        avatar,
-        ready: false,
-        score: 0,
-        answers: [],
-      };
-
-      room.players.push(newPlayer);
+      // Garante que o socket está registrado na sala do socket.io
       socket.join(upperCode);
-
-      console.log(`👤 Jogador ${name} entrou na sala ${upperCode}`);
-      io.to(upperCode).emit("room_updated", room);
+      // Devolve os dados atuais da sala para quem pediu
+      socket.emit("room_updated", room);
     } catch (error) {
-      console.error("Erro ao entrar na sala:", error);
-      socket.emit("error", "Erro ao entrar na sala");
+      console.error("Erro ao obter sala:", error);
+      socket.emit("error", "Erro ao carregar dados da salas");
+    }
+  });
+
+  // ─── OBTER PERGUNTA ATUAL (RECUPERAÇÃO) ────────────────────────────────────
+  socket.on("get_current_question", (data: { code: string }) => {
+    try {
+      const upperCode = data.code.toUpperCase();
+      const room = rooms.get(upperCode);
+      if (!room || room.status !== "playing") return;
+      const currentQuestion = room.questions[room.currentIndex];
+      if (!currentQuestion) return;
+      const safeAlternatives = currentQuestion.alternatives.map((alt: any) => ({
+        id: alt.id,
+        description: alt.description,
+      }));
+      socket.emit("next_question", {
+        questionIndex: room.currentIndex,
+        totalQuestions: room.questions.length,
+        question: {
+          id: currentQuestion.id,
+          title: currentQuestion.title,
+          alternatives: safeAlternatives,
+        },
+      });
+    } catch (error) {
+      console.error("Erro ao obter pergunta atual:", error);
     }
   });
 
@@ -133,7 +189,9 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
       }
 
       player.ready = !player.ready;
-      console.log(`Ready status updated for player ${player.name} in room ${upperCode}: ${player.ready}`);
+      console.log(
+        `Ready status updated for player ${player.name} in room ${upperCode}: ${player.ready}`,
+      );
       io.to(upperCode).emit("room_updated", room);
 
       // Se todos estiverem prontos e houver pelo menos 2 jogadores, inicia o jogo
@@ -166,8 +224,12 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
           totalQuestions: room.questions.length,
         });
 
-        // Envia a primeira pergunta
-        sendNextQuestion(io, room);
+        setTimeout(() => {
+          if (room.status === "playing") {
+            // Envia a primeira pergunta
+            sendNextQuestion(io, room);
+          }
+        }, 2000);
       }
     } catch (error) {
       console.error("Erro ao alternar prontidão:", error);
@@ -176,86 +238,60 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
   });
 
   // ─── ENVIAR RESPOSTA DA QUESTÃO ────────────────────────────────────────────
-  socket.on("submit_answer", (data: { code: string; alternativeId: string }) => {
-    try {
-      const { code, alternativeId } = data;
-      const upperCode = code.toUpperCase();
-      const room = rooms.get(upperCode);
+  socket.on(
+    "submit_answer",
+    (data: { code: string; alternativeId: string }) => {
+      try {
+        const { code, alternativeId } = data;
+        const upperCode = code.toUpperCase();
+        const room = rooms.get(upperCode);
 
-      if (!room || room.status !== "playing") {
-        return socket.emit("error", "Sala não ativa ou jogo não iniciado");
-      }
+        if (!room || room.status !== "playing") {
+          return socket.emit("error", "Sala não ativa ou jogo não iniciado");
+        }
 
-      const player = room.players.find((p) => p.socketId === socket.id);
-      if (!player) {
-        return socket.emit("error", "Jogador não encontrado");
-      }
+        const player = room.players.find((p) => p.socketId === socket.id);
+        if (!player) {
+          return socket.emit("error", "Jogador não encontrado");
+        }
 
-      const currentQuestion = room.questions[room.currentIndex];
-      
-      // Verifica se o jogador já respondeu esta questão
-      const alreadyAnswered = player.answers.some(
-        (ans) => ans.questionId === currentQuestion.id
-      );
-      if (alreadyAnswered) {
-        return socket.emit("error", "Você já respondeu esta pergunta");
-      }
+        const currentQuestion = room.questions[room.currentIndex];
 
-      // Encontra a alternativa e checa se está correta
-      const alternative = currentQuestion.alternatives.find(
-        (alt: any) => alt.id === alternativeId
-      );
-      const isCorrect = !!(alternative && alternative.isCorrect);
+        // Verifica se o jogador já respondeu esta questão
+        const alreadyAnswered = player.answers.some(
+          (ans) => ans.questionId === currentQuestion.id,
+        );
+        if (alreadyAnswered) {
+          return socket.emit("error", "Você já respondeu esta pergunta");
+        }
 
-      if (isCorrect) {
-        player.score += 15; // Ganha 15 XP por resposta correta
-      }
+        // Encontra a alternativa e checa se está correta
+        const alternative = currentQuestion.alternatives.find(
+          (alt: any) => alt.id === alternativeId,
+        );
+        const isCorrect = !!(alternative && alternative.isCorrect);
 
-      player.answers.push({
-        questionId: currentQuestion.id,
-        isCorrect,
-      });
+        if (isCorrect) {
+          player.score += 15; // Ganha 15 XP por resposta correta
+        }
 
-      room.answerCount++;
-
-      // Se ambos responderam
-      if (room.answerCount >= room.players.length) {
-        // Envia os resultados da rodada para todos
-        const roundResults = room.players.map((p) => {
-          const lastAns = p.answers[p.answers.length - 1];
-          return {
-            userId: p.userId,
-            name: p.name,
-            isCorrect: lastAns ? lastAns.isCorrect : false,
-            score: p.score,
-          };
+        player.answers.push({
+          questionId: currentQuestion.id,
+          isCorrect,
         });
 
-        io.to(upperCode).emit("round_end", {
-          correctAlternativeId: currentQuestion.alternatives.find((alt: any) => alt.isCorrect)?.id,
-          explanation: currentQuestion.explanation,
-          reference: currentQuestion.reference,
-          results: roundResults,
-        });
+        room.answerCount++;
 
-        // Espera 5 segundos para a leitura da explicação e avança
-        setTimeout(() => {
-          room.currentIndex++;
-          room.answerCount = 0;
-
-          if (room.currentIndex < room.questions.length) {
-            sendNextQuestion(io, room);
-          } else {
-            // Fim de jogo
-            endGame(io, room);
-          }
-        }, 5000);
+        // Se todos os jogadores responderam antes do tempo acabar:
+        if (room.answerCount >= room.players.length) {
+          finishRound(io, room);
+        }
+      } catch (error) {
+        console.error("Erro ao submeter resposta:", error);
+        socket.emit("error", "Erro ao computar resposta");
       }
-    } catch (error) {
-      console.error("Erro ao submeter resposta:", error);
-      socket.emit("error", "Erro ao computar resposta");
-    }
-  });
+    },
+  );
 
   // ─── SAIR DA SALA / DESCONEXÃO ─────────────────────────────────────────────
   socket.on("leave_room", (data: { code: string }) => {
@@ -271,11 +307,14 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
     }
   });
 }
-
 // Função auxiliar para enviar a próxima pergunta sem expor qual é a correta
 function sendNextQuestion(io: Server, room: Room) {
+  // Limpa timer anterior se houver
+  if (room.roundTimeout) {
+    clearTimeout(room.roundTimeout);
+  }
   const currentQuestion = room.questions[room.currentIndex];
-  
+
   // Removemos a flag 'isCorrect' das alternativas enviadas para o app para evitar trapaças
   const safeAlternatives = currentQuestion.alternatives.map((alt: any) => ({
     id: alt.id,
@@ -284,12 +323,78 @@ function sendNextQuestion(io: Server, room: Room) {
 
   io.to(room.code).emit("next_question", {
     questionIndex: room.currentIndex,
+    totalQuestions: room.questions.length,
     question: {
       id: currentQuestion.id,
       title: currentQuestion.title,
       alternatives: safeAlternatives,
     },
   });
+
+  // ⏱️ TIMER DO SERVIDOR (20s): Se alguém não responder a tempo, encerra a rodada
+  room.roundTimeout = setTimeout(() => {
+    if (room.status === "playing") {
+      finishRound(io, room);
+    }
+  }, 16000);
+}
+
+// Função auxiliar para encerrar a rodada, pontuar e avançar
+function finishRound(io: Server, room: Room) {
+  // Limpa o timer para não disparar duas vezes
+  if (room.roundTimeout) {
+    clearTimeout(room.roundTimeout);
+    room.roundTimeout = undefined;
+  }
+
+  const currentQuestion = room.questions[room.currentIndex];
+  if (!currentQuestion) return;
+
+  // Garante que jogadores que não responderam fiquem com registro de resposta errada
+  room.players.forEach((player) => {
+    const answered = player.answers.some(
+      (ans) => ans.questionId === currentQuestion.id,
+    );
+    if (!answered) {
+      player.answers.push({
+        questionId: currentQuestion.id,
+        isCorrect: false,
+      });
+    }
+  });
+
+  const roundResults = room.players.map((p) => {
+    const lastAns = p.answers.find((a) => a.questionId === currentQuestion.id);
+    return {
+      userId: p.userId,
+      name: p.name,
+      isCorrect: lastAns ? lastAns.isCorrect : false,
+      score: p.score,
+    };
+  });
+
+  io.to(room.code).emit("round_end", {
+    correctAlternativeId: currentQuestion.alternatives.find(
+      (alt: any) => alt.isCorrect,
+    )?.id,
+    explanation: currentQuestion.explanation,
+    reference: currentQuestion.reference,
+    results: roundResults,
+  });
+
+  // Espera 5 segundos para a leitura da explicação bíblica e passa para a próxima
+  setTimeout(() => {
+    if (room.status !== "playing") return;
+
+    room.currentIndex++;
+    room.answerCount = 0;
+
+    if (room.currentIndex < room.questions.length) {
+      sendNextQuestion(io, room);
+    } else {
+      endGame(io, room);
+    }
+  }, 5000);
 }
 
 // Função para encerrar a partida e consolidar pontos no banco (para partidas válidas)
@@ -376,7 +481,9 @@ async function endGame(io: Server, room: Room) {
       });
     }
 
-    console.log(`🏁 Jogo finalizado na sala ${room.code}. Vencedor: ${winnerId}`);
+    console.log(
+      `🏁 Jogo finalizado na sala ${room.code}. Vencedor: ${winnerId}`,
+    );
     io.to(room.code).emit("game_end", {
       players: room.players.map((p) => ({
         userId: p.userId,
@@ -419,8 +526,10 @@ function handlePlayerLeaving(io: Server, socket: Socket, code: string) {
     if (room.status === "playing") {
       room.status = "finished";
       const remainingPlayer = room.players[0];
-      console.log(`🏆 Vitória por WO na sala ${upperCode} para ${remainingPlayer.name}`);
-      
+      console.log(
+        `🏆 Vitória por WO na sala ${upperCode} para ${remainingPlayer.name}`,
+      );
+
       io.to(upperCode).emit("game_end", {
         players: room.players.map((p) => ({
           userId: p.userId,

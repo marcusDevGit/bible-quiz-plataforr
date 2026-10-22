@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   TouchableOpacity,
@@ -8,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { socket } from "@/services/socket";
@@ -19,6 +19,10 @@ export default function MultiplayerGameScreen() {
   const { code } = useLocalSearchParams();
 
   // Estados do Jogo
+  const SECONDS_PER_QUESTION = 15;
+  const EXPLANATION_DURATION = 5;
+  const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
+  const [nextQuestionCountdown, setNextQuestionCountdown] = useState(EXPLANATION_DURATION);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(10);
   const [currentQuestion, setCurrentQuestion] = useState<any>(null);
@@ -41,13 +45,25 @@ export default function MultiplayerGameScreen() {
 
   useEffect(() => {
     // Escuta a próxima pergunta
+    if (!socket.connected) {
+      socket.connect()
+    }
+
+    if (code) {
+      socket.emit("get_current_question", { code: String(code) })
+    }
     socket.on("next_question", (data: any) => {
       setQuestionIndex(data.questionIndex);
+      if (data.totalQuestions) {
+        setTotalQuestions(data.totalQuestions)
+      }
       setCurrentQuestion(data.question);
       setSelectedOptionId(null);
       setSubmitted(false);
       setShowingExplanation(false);
       setCorrectAlternativeId(null);
+      setTimeLeft(SECONDS_PER_QUESTION);
+
     });
 
     // Escuta o encerramento da rodada (ambos responderam)
@@ -57,6 +73,7 @@ export default function MultiplayerGameScreen() {
       setReferenceText(data.reference);
       setRoundScores(data.results);
       setShowingExplanation(true);
+      setNextQuestionCountdown(EXPLANATION_DURATION)
     });
 
     // Escuta o encerramento do jogo
@@ -83,6 +100,41 @@ export default function MultiplayerGameScreen() {
       socket.off("error");
     };
   }, [code]);
+
+  // Efeito do Cronômetro regressivo
+  useEffect(() => {
+    if (!currentQuestion || showingExplanation) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [currentQuestion, showingExplanation, questionIndex]);
+
+  // Efeito do Cronômetro de Transição para a próxima pergunta (5 segundos)
+  useEffect(() => {
+    if (!showingExplanation) return;
+
+    const transitionTimer = setInterval(() => {
+      setNextQuestionCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(transitionTimer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(transitionTimer);
+  }, [showingExplanation]);
+
 
   const handleSelectAlternative = (altId: string) => {
     if (submitted || showingExplanation) return;
@@ -131,16 +183,16 @@ export default function MultiplayerGameScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface max-w-md mx-auto w-full relative">
       {/* Cabeçalho da Partida */}
-      <View className="flex flex-col px-margin-mobile pt-4 pb-2 bg-surface border-b border-outline-variant/30">
-        <View className="flex-row items-center justify-between h-14">
+      <View className="flex flex-col bg-surface border-b border-outline-variant/30">
+        <View className="flex-row items-center justify-between px-margin-mobile pt-4 pb-2">
           <TouchableOpacity
             onPress={handleLeaveRoom}
             className="w-10 h-10 items-center justify-center rounded-full bg-surface-container-lowest border border-outline-variant/40"
           >
             <MaterialIcons name="close" size={20} color="#444651" />
           </TouchableOpacity>
-          <View className="flex-row items-center gap-4 bg-surface-container-lowest px-4 py-2 rounded-full border border-outline-variant/30">
-            {/* Placar em Tempo Real */}
+          {/* Placar em Tempo Real */}
+          <View className="flex-row items-center gap-3 bg-surface-container-lowest px-3 py-1.5 rounded-full border border-outline-variant/30">
             <Text className="font-label-sm text-primary font-bold">
               Você: {myPlayerScore ? myPlayerScore.score : 0} XP
             </Text>
@@ -149,9 +201,58 @@ export default function MultiplayerGameScreen() {
               Rival: {otherPlayerScore ? otherPlayerScore.score : 0} XP
             </Text>
           </View>
-          <Text className="font-label-lg font-bold text-on-surface-variant">
-            {questionIndex + 1}/{totalQuestions}
-          </Text>
+          {/* Cronômetro Regressivo */}
+          <View
+            style={{
+              backgroundColor: showingExplanation
+                ? "#e0f2fe"
+                : timeLeft <= 4
+                  ? "#fef2f2"
+                  : "#ffffff",
+              borderColor: showingExplanation
+                ? "#7dd3fc"
+                : timeLeft <= 4
+                  ? "#fca5a5"
+                  : "#e0e3eb",
+              borderWidth: 1,
+            }}
+            className="flex-row items-center gap-1.5 px-3 py-1 rounded-full"
+          >
+            <MaterialIcons
+              name={showingExplanation ? "fast-forward" : "timer"}
+              size={16}
+              color={
+                showingExplanation
+                  ? "#0284c7"
+                  : timeLeft <= 4
+                    ? "#ba1a1a"
+                    : "#fea619"
+              }
+            />
+            <Text
+              style={{
+                color: showingExplanation
+                  ? "#0369a1"
+                  : timeLeft <= 4
+                    ? "#ba1a1a"
+                    : "#00236f",
+              }}
+              className="font-bold text-xs"
+            >
+              {showingExplanation ? `${nextQuestionCountdown}s` : `${timeLeft}s`}
+            </Text>
+          </View>
+
+        </View>
+        {/* Barra de Progresso do Tempo */}
+        <View style={{ backgroundColor: "#e6e8ea" }} className="w-full h-1.5 overflow-hidden">
+          <View
+            style={{
+              width: `${(timeLeft / SECONDS_PER_QUESTION) * 100}%`,
+              backgroundColor: timeLeft <= 4 ? "#ba1a1a" : "#fea619",
+            }}
+            className="h-full rounded-r-full transition-all"
+          />
         </View>
       </View>
 
@@ -220,21 +321,50 @@ export default function MultiplayerGameScreen() {
           })}
         </View>
 
+        {/* Aviso de Espera: quando você já respondeu mas o rival ainda não */}
+        {submitted && !showingExplanation && (
+          <View className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-4 flex-row items-center justify-center gap-3 mt-2 mb-4">
+            <ActivityIndicator size="small" color="#fea619" />
+            <Text className="font-body-md text-on-surface-variant font-semibold">
+              Resposta enviada! Aguardando oponente...
+            </Text>
+          </View>
+        )}
+
+
         {/* Painel de Explicação / Bíblico ao fim da rodada */}
         {showingExplanation && (
-          <View
-            style={{ borderLeftWidth: 4, borderColor: "#fea619" }}
-            className="bg-surface-container-low rounded-xl p-4 shadow-sm"
-          >
-            <View className="flex-row items-center gap-2 mb-2">
-              <MaterialIcons name="menu-book" size={20} color="#684000" />
-              <Text className="font-title-sm font-bold text-on-secondary-container">
-                Estudo & Contexto {referenceText ? `— ${referenceText}` : ""}
+          <View className="flex-col gap-3">
+            {/* Banner com Contador da Próxima Pergunta */}
+            <View className="bg-primary/10 border border-primary/25 rounded-2xl p-4 flex-row items-center justify-between shadow-sm">
+              <View className="flex-row items-center gap-2">
+                <MaterialIcons name="fast-forward" size={22} color="#00236f" />
+                <Text className="font-title-md font-bold text-primary">
+                  Próxima pergunta em
+                </Text>
+              </View>
+              <View className="bg-primary px-3.5 py-1.5 rounded-full">
+                <Text className="font-headline-sm font-extrabold text-white text-sm">
+                  {nextQuestionCountdown}s
+                </Text>
+              </View>
+            </View>
+
+            {/* Card com Estudo Bíblico e Referência */}
+            <View
+              style={{ borderLeftWidth: 4, borderColor: "#fea619" }}
+              className="bg-surface-container-low rounded-xl p-4 shadow-sm"
+            >
+              <View className="flex-row items-center gap-2 mb-2">
+                <MaterialIcons name="menu-book" size={20} color="#684000" />
+                <Text className="font-title-sm font-bold text-on-secondary-container">
+                  Estudo & Contexto {referenceText ? `— ${referenceText}` : ""}
+                </Text>
+              </View>
+              <Text className="font-body-md text-on-surface-variant leading-relaxed">
+                {explanationText || "Nenhuma explicação adicional fornecida."}
               </Text>
             </View>
-            <Text className="font-body-md text-on-surface-variant leading-relaxed">
-              {explanationText || "Nenhuma explicação adicional fornecida."}
-            </Text>
           </View>
         )}
       </ScrollView>

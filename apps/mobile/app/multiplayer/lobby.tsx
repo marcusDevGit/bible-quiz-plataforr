@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { socket } from "@/services/socket";
@@ -28,14 +28,9 @@ export default function LobbyScreen() {
     // Se o socket estiver desconectado (ex: recarga de hot-reload), reconecta
     if (!socket.connected) {
       socket.connect();
-      if (loggedUser && code) {
-        socket.emit("join_room", {
-          code: String(code),
-          userId: loggedUser.id,
-          name: loggedUser.name,
-          avatar: loggedUser.avatar,
-        });
-      }
+    }
+    if (code) {
+      socket.emit("get_room", { code: String(code) })
     }
 
     // Escuta atualizações da sala
@@ -63,7 +58,7 @@ export default function LobbyScreen() {
       socket.off("game_start");
       socket.off("error");
     };
-  }, [code, loggedUser]);
+  }, [code]);
 
   const handleToggleReady = () => {
     socket.emit("toggle_ready", { code });
@@ -189,11 +184,10 @@ export default function LobbyScreen() {
       <View className="absolute bottom-10 left-5 right-5">
         <TouchableOpacity
           onPress={handleToggleReady}
-          className={`w-full py-4 rounded-full flex-row items-center justify-center gap-2 border-2 ${
-            myPlayer?.ready
-              ? "border-secondary bg-secondary-container"
-              : "border-primary bg-primary"
-          }`}
+          className={`w-full py-4 rounded-full flex-row items-center justify-center gap-2 border-2 ${myPlayer?.ready
+            ? "border-secondary bg-secondary-container"
+            : "border-primary bg-primary"
+            }`}
         >
           <MaterialIcons
             name={myPlayer?.ready ? "cancel" : "check"}
@@ -201,9 +195,8 @@ export default function LobbyScreen() {
             color={myPlayer?.ready ? "#684000" : "#ffffff"}
           />
           <Text
-            className={`font-label-lg font-bold text-sm ${
-              myPlayer?.ready ? "text-on-secondary-container" : "text-white"
-            }`}
+            className={`font-label-lg font-bold text-sm ${myPlayer?.ready ? "text-on-secondary-container" : "text-white"
+              }`}
           >
             {myPlayer?.ready ? "Cancelar Pronto" : "Estou Pronto"}
           </Text>

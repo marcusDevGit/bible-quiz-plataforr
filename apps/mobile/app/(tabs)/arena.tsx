@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   TouchableOpacity,
@@ -8,11 +7,13 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { authService } from "@/features/auth/services/auth.service";
 import { socket } from "@/services/socket";
+import React from "react";
 
 export default function ArenaRoute() {
   const router = useRouter();
@@ -28,11 +29,9 @@ export default function ArenaRoute() {
 
   useEffect(() => {
     // Conecta o socket ao abrir a tela da Arena
-    socket.connect();
-
-    socket.on("connect", () => {
-      console.log("Connected to WebSocket API");
-    });
+    if (!socket.connected) {
+      socket.connect();
+    }
 
     socket.on("room_created", (room: any) => {
       setConnecting(false);
@@ -56,11 +55,9 @@ export default function ArenaRoute() {
     });
 
     return () => {
-      socket.off("connect");
       socket.off("room_created");
       socket.off("room_updated");
       socket.off("error");
-      socket.disconnect();
     };
   }, []);
 
