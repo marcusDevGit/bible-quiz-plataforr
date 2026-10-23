@@ -6,6 +6,7 @@ interface Player {
   userId: string;
   name: string;
   avatar: string | null;
+  level?: number;
   ready: boolean;
   score: number;
   answers: { questionId: string; isCorrect: boolean }[];
@@ -18,11 +19,22 @@ interface Room {
   questions: any[];
   currentIndex: number;
   answerCount: number;
+  theme?: string;
   roundTimeout?: NodeJS.Timeout;
+}
+
+interface QueuePlayer {
+  socketId: string;
+  userId: string;
+  name: string;
+  avatar: string | null;
+  level: number;
+  joinedAt: number;
 }
 
 // Em memória - gerenciamento das salas de jogo
 const rooms = new Map<string, Room>();
+const quickMatchQueue: QueuePlayer[] = [];
 
 // Auxiliar para gerar código de sala de 6 dígitos único
 function generateRoomCode(): string {
@@ -38,12 +50,137 @@ function generateRoomCode(): string {
 }
 
 export function registerMultiplayerHandlers(io: Server, socket: Socket) {
+  // ─── PARTIDA RÁPIDA (MATCHMAKING) ──────────────────────────────────────────
+  socket.on(
+    "find_quick_match",
+    async (data: {
+      userId: string;
+      name: string;
+      avatar: string | null;
+      level?: number;
+    }) => {
+      try {
+        const { userId, name, avatar, level = 1 } = data;
+
+        // Evita adicionar o mesmo jogador duas vezes na fila
+        const existingIndex = quickMatchQueue.findIndex(
+          (p) => p.userId === userId,
+        );
+        if (existingIndex !== -1) {
+          quickMatchQueue.splice(existingIndex, 1);
+        }
+
+        // Tenta encontrar um adversário na fila com nível próximo (+/- 3 níveis)
+        let opponentIndex = quickMatchQueue.findIndex(
+          (p) => Math.abs(p.level - level) <= 3 && p.socketId !== socket.id,
+        );
+
+        // Se ninguém com nível próximo estiver esperando, pega o mais antigo da fila
+        if (opponentIndex === -1) {
+          opponentIndex = quickMatchQueue.findIndex(
+            (p) => p.socketId !== socket.id,
+          );
+        }
+
+        if (opponentIndex !== -1) {
+          // Oponente encontrado! Remove da fila
+          const opponent = quickMatchQueue.splice(opponentIndex, 1)[0];
+          const code = generateRoomCode();
+
+          const p1: Player = {
+            socketId: opponent.socketId,
+            userId: opponent.userId,
+            name: opponent.name,
+            avatar: opponent.avatar,
+            level: opponent.level,
+            ready: true, // Já entram prontos na partida rápida
+            score: 0,
+            answers: [],
+          };
+
+          const p2: Player = {
+            socketId: socket.id,
+            userId,
+            name,
+            avatar,
+            level,
+            ready: true,
+            score: 0,
+            answers: [],
+          };
+
+          const newRoom: Room = {
+            code,
+            players: [p1, p2],
+            status: "waiting",
+            questions: [],
+            currentIndex: 0,
+            answerCount: 0,
+            theme: "Geral (Aleatório)",
+          };
+
+          rooms.set(code, newRoom);
+
+          // Inscreve ambos os sockets na sala
+          socket.join(code);
+          const opponentSocket = io.sockets.sockets.get(opponent.socketId);
+          if (opponentSocket) {
+            opponentSocket.join(code);
+          }
+
+          console.log(
+            `⚡ Partida Rápida iniciada: ${p1.name} vs ${p2.name} na sala ${code}`,
+          );
+
+          // Notifica ambos que a partida foi encontrada
+          io.to(code).emit("quick_match_found", { code, room: newRoom });
+          // Inicia a partida imediatamente!
+          await startGame(io, newRoom);
+        } else {
+          // Nenhum oponente agora: coloca na fila e avisa que está buscando
+          quickMatchQueue.push({
+            socketId: socket.id,
+            userId,
+            name,
+            avatar,
+            level,
+            joinedAt: Date.now(),
+          });
+
+          console.log(
+            `⏳ ${name} (Nv. ${level}) entrou na fila de partida rápida.`,
+          );
+          socket.emit("searching_match", {
+            message: "Procurando oponente do seu nível...",
+          });
+        }
+      } catch (error) {
+        console.error("Erro no matchmaking:", error);
+        socket.emit("error", "Erro ao buscar partida rápida");
+      }
+    },
+  );
+
+  socket.on("cancel_quick_match", () => {
+    const index = quickMatchQueue.findIndex((p) => p.socketId === socket.id);
+    if (index !== -1) {
+      const removed = quickMatchQueue.splice(index, 1)[0];
+      console.log(`❌ ${removed.name} cancelou a busca de partida rápida.`);
+    }
+  });
+
   // ─── CRIAR SALA ────────────────────────────────────────────────────────────
   socket.on(
     "create_room",
-    async (data: { userId: string; name: string; avatar: string | null }) => {
+    async (data: {
+      userId: string;
+      name: string;
+      avatar: string | null;
+      level?: number;
+      theme?: string;
+    }) => {
       try {
-        const { userId, name, avatar } = data;
+        const { userId, name, avatar, level = 1, theme } = data;
         const code = generateRoomCode();
 
         const newPlayer: Player = {
@@ -51,6 +188,7 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
           userId,
           name,
           avatar,
+          level,
           ready: false,
           score: 0,
           answers: [],
@@ -63,12 +201,15 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
           questions: [],
           currentIndex: 0,
           answerCount: 0,
+          theme: theme || "Geral (Aleatório)",
         };
 
         rooms.set(code, newRoom);
         socket.join(code);
 
-        console.log(`🏠 Sala criada: ${code} por ${name}`);
+        console.log(
+          `🏠 Sala criada: ${code} por ${name} (Tema: ${newRoom.theme})`,
+        );
         socket.emit("room_created", newRoom);
       } catch (error) {
         console.error("Erro ao criar sala:", error);
@@ -197,39 +338,7 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
       // Se todos estiverem prontos e houver pelo menos 2 jogadores, inicia o jogo
       const allReady = room.players.every((p) => p.ready);
       if (allReady && room.players.length >= 2 && room.status === "waiting") {
-        room.status = "playing";
-        console.log(`🎬 Iniciando jogo na sala ${upperCode}`);
-
-        // Busca 10 perguntas aleatórias do banco
-        const questions = await prisma.question.findMany({
-          take: 10,
-          include: {
-            alternatives: true,
-          },
-        });
-
-        // Embaralha as perguntas
-        const shuffled = [...questions].sort(() => 0.5 - Math.random());
-        room.questions = shuffled;
-        room.currentIndex = 0;
-        room.answerCount = 0;
-
-        // Limpa respostas anteriores dos jogadores
-        room.players.forEach((p) => {
-          p.score = 0;
-          p.answers = [];
-        });
-
-        io.to(upperCode).emit("game_start", {
-          totalQuestions: room.questions.length,
-        });
-
-        setTimeout(() => {
-          if (room.status === "playing") {
-            // Envia a primeira pergunta
-            sendNextQuestion(io, room);
-          }
-        }, 2000);
+        await startGame(io, room);
       }
     } catch (error) {
       console.error("Erro ao alternar prontidão:", error);
@@ -299,6 +408,11 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
   });
 
   socket.on("disconnecting", () => {
+    // 1. Remove da fila de partida rápida se o jogador fechar o app enquanto buscava
+    const queueIdx = quickMatchQueue.findIndex((p) => p.socketId === socket.id);
+    if (queueIdx !== -1) {
+      quickMatchQueue.splice(queueIdx, 1);
+    }
     // Procura salas onde este socket está conectado
     for (const roomCode of socket.rooms) {
       if (rooms.has(roomCode)) {
@@ -307,6 +421,62 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
     }
   });
 }
+// ─── INICIALIZAR PARTIDA (Reutilizável) ──────────────────────────────────────
+async function startGame(io: Server, room: Room) {
+  try {
+    room.status = "playing";
+    console.log(`🎬 Iniciando jogo na sala ${room.code} (Tema: ${room.theme})`);
+
+    // Filtra perguntas pelo tema escolhido (ou geral)
+    const whereClause: any = {};
+    if (room.theme && room.theme !== "Geral (Aleatório)") {
+      whereClause.category = { name: room.theme };
+    }
+
+    // Busca com offset aleatório para não repetir sempre as mesmas 10 perguntas
+    const totalQuestions = await prisma.question.count({ where: whereClause });
+    const skip =
+      totalQuestions > 10
+        ? Math.floor(Math.random() * (totalQuestions - 10))
+        : 0;
+
+    const questions = await prisma.question.findMany({
+      where: whereClause,
+      skip,
+      take: 10,
+      include: {
+        alternatives: true,
+      },
+    });
+
+    // Embaralha as perguntas
+    room.questions = [...questions].sort(() => 0.5 - Math.random());
+    room.currentIndex = 0;
+    room.answerCount = 0;
+
+    // Zera pontos e respostas dos jogadores para o início da partida
+    room.players.forEach((p) => {
+      p.score = 0;
+      p.answers = [];
+    });
+
+    // Notifica os clientes que o jogo começou
+    io.to(room.code).emit("game_start", {
+      totalQuestions: room.questions.length,
+    });
+
+    // Aguarda 2 segundos para dar tempo de montar a tela do jogo e envia a primeira pergunta
+    setTimeout(() => {
+      if (room.status === "playing") {
+        sendNextQuestion(io, room);
+      }
+    }, 2000);
+  } catch (error) {
+    console.error("Erro ao iniciar jogo:", error);
+    io.to(room.code).emit("error", "Erro ao carregar perguntas da partida");
+  }
+}
+
 // Função auxiliar para enviar a próxima pergunta sem expor qual é a correta
 function sendNextQuestion(io: Server, room: Room) {
   // Limpa timer anterior se houver

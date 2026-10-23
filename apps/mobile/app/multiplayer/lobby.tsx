@@ -111,6 +111,15 @@ export default function LobbyScreen() {
             <Text className="font-headline-lg text-[32px] font-extrabold text-primary tracking-widest mt-1">
               {room.code}
             </Text>
+            {/*  Badge do Tema Escolhido */}
+            {room.theme && (
+              <View className="mt-2 bg-secondary-container/20 border border-secondary-container/30 px-3 py-1 rounded-full flex-row items-center gap-1.5">
+                <MaterialIcons name="menu-book" size={14} color="#855300" />
+                <Text className="text-secondary font-bold text-xs">
+                  Tema: {room.theme}
+                </Text>
+              </View>
+            )}
             <Text className="font-body-sm text-on-surface-variant text-center mt-2 px-2">
               Compartilhe este código com o seu amigo para ele se conectar à partida.
             </Text>
