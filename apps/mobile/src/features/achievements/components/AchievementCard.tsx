@@ -145,19 +145,19 @@ export function AchievementCard({ item, onPress }: AchievementCardProps) {
                 >
                     +{item.xpReward} XP
                 </Text>
-            ) : progressVal > 0 ? (
+            ) : (
                 <View style={{ width: "100%", marginTop: 8 }}>
                     <View className="flex-row justify-between mb-1">
-                        <Text style={{ fontSize: 9, color: "#757682" }}>Progresso</Text>
+                        <Text style={{ fontSize: 9, color: "#757682" }}>{progressVal === 0 ? "Não iniciada" : "Progresso"}</Text>
                         <Text style={{ fontSize: 9, color: "#757682", fontWeight: "bold" }}>
                             {progressVal}%
                         </Text>
                     </View>
                     <View
                         style={{
-                            height: 4,
+                            height: 5,
                             backgroundColor: "#e0e3e5",
-                            borderRadius: 2,
+                            borderRadius: 3,
                             overflow: "hidden",
                         }}
                     >
@@ -165,22 +165,11 @@ export function AchievementCard({ item, onPress }: AchievementCardProps) {
                             style={{
                                 height: "100%",
                                 width: `${progressVal}%`,
-                                backgroundColor: "#00236f",
+                                backgroundColor: "#757682",
                             }}
                         />
                     </View>
                 </View>
-            ) : (
-                <Text
-                    style={{
-                        fontSize: 10,
-                        color: "#757682",
-                        marginTop: 6,
-                        fontStyle: "italic",
-                    }}
-                >
-                    Bloqueada
-                </Text>
             )}
         </TouchableOpacity>
     );

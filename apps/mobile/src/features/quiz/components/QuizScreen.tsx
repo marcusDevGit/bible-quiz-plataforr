@@ -253,7 +253,7 @@ export default function QuizScreen() {
           }}
           showsVerticalScrollIndicator={false}
         >
-          <View className="w-full max-w-xl mx-auto">
+          <View className="w-full max-w-2xl mx-auto">
             {/* Badges de Metadados: Categoria e Referência */}
             <View className="flex-row items-center justify-center gap-2 mb-4">
               {currentQuestion.category && (
@@ -350,7 +350,7 @@ export default function QuizScreen() {
             borderTopWidth: 1,
             borderTopColor: "#e6e8ea",
           }}
-          className="px-5 pt-3 flex-row gap-3 z-10"
+          className="w-full max-w-2xl mx-auto flex-row gap-3"
         >
           <TouchableOpacity
             style={{

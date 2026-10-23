@@ -181,10 +181,10 @@ export default function MultiplayerGameScreen() {
   const otherPlayerScore = roundScores.find((p) => p.userId !== loggedUser?.id);
 
   return (
-    <SafeAreaView className="flex-1 bg-surface max-w-md mx-auto w-full relative">
+    <SafeAreaView className="flex-1 bg-surface w-full relative">
       {/* Cabeçalho da Partida */}
-      <View className="flex flex-col bg-surface border-b border-outline-variant/30">
-        <View className="flex-row items-center justify-between px-margin-mobile pt-4 pb-2">
+      <View className="w-full bg-surface border-b border-outline-variant/30">
+        <View className="max-w-2xl mx-auto w-full flex-row items-center justify-between px-margin-mobile pt-4 pb-2">
           <TouchableOpacity
             onPress={handleLeaveRoom}
             className="w-10 h-10 items-center justify-center rounded-full bg-surface-container-lowest border border-outline-variant/40"
@@ -259,114 +259,116 @@ export default function MultiplayerGameScreen() {
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
-        className="flex-1 px-margin-mobile py-4"
-      >
-        {/* Título da pergunta */}
-        <View className="my-6 px-1">
-          <Text className="font-headline-md text-on-surface text-center leading-tight">
-            {currentQuestion.title}
-          </Text>
-        </View>
+        className="flex-1 w-full"
+      >  <View className="max-w-2xl mx-auto w-full px-4 py-4">
 
-        {/* Lista de alternativas */}
-        <View className="flex-col gap-3.5 mb-6">
-          {currentQuestion.alternatives.map((alt: any) => {
-            const isSelected = selectedOptionId === alt.id;
-            const isCorrect = correctAlternativeId === alt.id;
-            const revealMode = correctAlternativeId !== null;
-
-            // Determinar estilo dinâmico
-            let itemStyle = "border-outline-variant/40 bg-surface-container-lowest";
-            let textStyle = "text-on-surface";
-            let checkIconName: keyof typeof MaterialIcons.glyphMap = "radio-button-unchecked";
-            let checkIconColor = "#c5c5d3";
-
-            if (isSelected && !revealMode) {
-              itemStyle = "border-primary bg-primary-fixed-dim";
-              textStyle = "text-on-primary-fixed font-bold";
-              checkIconName = "check-circle";
-              checkIconColor = "#00236f";
-            } else if (revealMode) {
-              if (isCorrect) {
-                // Alternativa correta revelada
-                itemStyle = "border-on-tertiary-container bg-tertiary-fixed-dim/20";
-                textStyle = "text-on-tertiary-fixed-variant font-bold";
-                checkIconName = "check-circle";
-                checkIconColor = "#27c38a";
-              } else if (isSelected) {
-                // Errada selecionada pelo jogador
-                itemStyle = "border-error bg-error-container/20";
-                textStyle = "text-on-error-container font-bold";
-                checkIconName = "cancel";
-                checkIconColor = "#ba1a1a";
-              } else {
-                // Não selecionadas
-                itemStyle = "border-outline-variant/20 bg-surface-container-low opacity-50";
-              }
-            }
-
-            return (
-              <TouchableOpacity
-                key={alt.id}
-                onPress={() => handleSelectAlternative(alt.id)}
-                disabled={submitted || revealMode}
-                className={`w-full flex-row items-center justify-between p-5 rounded-2xl border-2 ${itemStyle}`}
-              >
-                <Text className={`font-title-md flex-1 pl-2 ${textStyle}`}>
-                  {alt.description}
-                </Text>
-                <MaterialIcons name={checkIconName} size={24} color={checkIconColor} />
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Aviso de Espera: quando você já respondeu mas o rival ainda não */}
-        {submitted && !showingExplanation && (
-          <View className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-4 flex-row items-center justify-center gap-3 mt-2 mb-4">
-            <ActivityIndicator size="small" color="#fea619" />
-            <Text className="font-body-md text-on-surface-variant font-semibold">
-              Resposta enviada! Aguardando oponente...
+          {/* Título da pergunta */}
+          <View className="my-6 px-1">
+            <Text className="font-headline-md text-on-surface text-center leading-tight">
+              {currentQuestion.title}
             </Text>
           </View>
-        )}
 
+          {/* Lista de alternativas */}
+          <View className="flex-col gap-3.5 mb-6">
+            {currentQuestion.alternatives.map((alt: any) => {
+              const isSelected = selectedOptionId === alt.id;
+              const isCorrect = correctAlternativeId === alt.id;
+              const revealMode = correctAlternativeId !== null;
 
-        {/* Painel de Explicação / Bíblico ao fim da rodada */}
-        {showingExplanation && (
-          <View className="flex-col gap-3">
-            {/* Banner com Contador da Próxima Pergunta */}
-            <View className="bg-primary/10 border border-primary/25 rounded-2xl p-4 flex-row items-center justify-between shadow-sm">
-              <View className="flex-row items-center gap-2">
-                <MaterialIcons name="fast-forward" size={22} color="#00236f" />
-                <Text className="font-title-md font-bold text-primary">
-                  Próxima pergunta em
-                </Text>
-              </View>
-              <View className="bg-primary px-3.5 py-1.5 rounded-full">
-                <Text className="font-headline-sm font-extrabold text-white text-sm">
-                  {nextQuestionCountdown}s
-                </Text>
-              </View>
-            </View>
+              // Determinar estilo dinâmico
+              let itemStyle = "border-outline-variant/40 bg-surface-container-lowest";
+              let textStyle = "text-on-surface";
+              let checkIconName: keyof typeof MaterialIcons.glyphMap = "radio-button-unchecked";
+              let checkIconColor = "#c5c5d3";
 
-            {/* Card com Estudo Bíblico e Referência */}
-            <View
-              style={{ borderLeftWidth: 4, borderColor: "#fea619" }}
-              className="bg-surface-container-low rounded-xl p-4 shadow-sm"
-            >
-              <View className="flex-row items-center gap-2 mb-2">
-                <MaterialIcons name="menu-book" size={20} color="#684000" />
-                <Text className="font-title-sm font-bold text-on-secondary-container">
-                  Estudo & Contexto {referenceText ? `— ${referenceText}` : ""}
-                </Text>
-              </View>
-              <Text className="font-body-md text-on-surface-variant leading-relaxed">
-                {explanationText || "Nenhuma explicação adicional fornecida."}
+              if (isSelected && !revealMode) {
+                itemStyle = "border-primary bg-primary-fixed-dim";
+                textStyle = "text-on-primary-fixed font-bold";
+                checkIconName = "check-circle";
+                checkIconColor = "#00236f";
+              } else if (revealMode) {
+                if (isCorrect) {
+                  // Alternativa correta revelada
+                  itemStyle = "border-on-tertiary-container bg-tertiary-fixed-dim/20";
+                  textStyle = "text-on-tertiary-fixed-variant font-bold";
+                  checkIconName = "check-circle";
+                  checkIconColor = "#27c38a";
+                } else if (isSelected) {
+                  // Errada selecionada pelo jogador
+                  itemStyle = "border-error bg-error-container/20";
+                  textStyle = "text-on-error-container font-bold";
+                  checkIconName = "cancel";
+                  checkIconColor = "#ba1a1a";
+                } else {
+                  // Não selecionadas
+                  itemStyle = "border-outline-variant/20 bg-surface-container-low opacity-50";
+                }
+              }
+
+              return (
+                <TouchableOpacity
+                  key={alt.id}
+                  onPress={() => handleSelectAlternative(alt.id)}
+                  disabled={submitted || revealMode}
+                  className={`w-full flex-row items-center justify-between p-5 rounded-2xl border-2 ${itemStyle}`}
+                >
+                  <Text className={`font-title-md flex-1 pl-2 ${textStyle}`}>
+                    {alt.description}
+                  </Text>
+                  <MaterialIcons name={checkIconName} size={24} color={checkIconColor} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Aviso de Espera: quando você já respondeu mas o rival ainda não */}
+          {submitted && !showingExplanation && (
+            <View className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-4 flex-row items-center justify-center gap-3 mt-2 mb-4">
+              <ActivityIndicator size="small" color="#fea619" />
+              <Text className="font-body-md text-on-surface-variant font-semibold">
+                Resposta enviada! Aguardando oponente...
               </Text>
             </View>
-          </View>
-        )}
+          )}
+
+
+          {/* Painel de Explicação / Bíblico ao fim da rodada */}
+          {showingExplanation && (
+            <View className="flex-col gap-3">
+              {/* Banner com Contador da Próxima Pergunta */}
+              <View className="bg-primary/10 border border-primary/25 rounded-2xl p-4 flex-row items-center justify-between shadow-sm">
+                <View className="flex-row items-center gap-2">
+                  <MaterialIcons name="fast-forward" size={22} color="#00236f" />
+                  <Text className="font-title-md font-bold text-primary">
+                    Próxima pergunta em
+                  </Text>
+                </View>
+                <View className="bg-primary px-3.5 py-1.5 rounded-full">
+                  <Text className="font-headline-sm font-extrabold text-white text-sm">
+                    {nextQuestionCountdown}s
+                  </Text>
+                </View>
+              </View>
+
+              {/* Card com Estudo Bíblico e Referência */}
+              <View
+                style={{ borderLeftWidth: 4, borderColor: "#fea619" }}
+                className="bg-surface-container-low rounded-xl p-4 shadow-sm"
+              >
+                <View className="flex-row items-center gap-2 mb-2">
+                  <MaterialIcons name="menu-book" size={20} color="#684000" />
+                  <Text className="font-title-sm font-bold text-on-secondary-container">
+                    Estudo & Contexto {referenceText ? `— ${referenceText}` : ""}
+                  </Text>
+                </View>
+                <Text className="font-body-md text-on-surface-variant leading-relaxed">
+                  {explanationText || "Nenhuma explicação adicional fornecida."}
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
