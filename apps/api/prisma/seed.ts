@@ -4,87 +4,98 @@ import * as path from "path";
 
 const prisma = new PrismaClient();
 
-interface JsonAlternative {
-  description: string;
-  isCorrect: boolean;
-}
-
-interface JsonStats {
-  timesPlayed: number;
-  correctRate: number;
-  averageAnswerTime: number;
-}
-interface JsonQuestion {
-  id: string;
-  category: string;
-  difficulty: "EASY" | "MEDIUM" | "HARD";
-  question: string;
-  alternatives: JsonAlternative[];
-  reference: string;
-  explanation: string;
-  xpReward: number;
-  difficultyScore: number;
-  tags: string[];
-  stats?: JsonStats;
-}
 async function main() {
-  console.log("🌱 Iniciando o seed do banco de dados com padrão completo...");
-  // Caminho absoluto para os arquivos JSON
-  const questionsPath = path.join(__dirname, "../../../data/questions.json");
+  console.log(
+    "🌱 Iniciando atualização do banco com 103 perguntas e 4 alternativas (A, B, C, D)...",
+  );
+
+  // 1. Cadastrar / Atualizar Categorias
+  const categoriesPath = path.join(
+    __dirname,
+    "../../../data/category_complete.json",
+  );
+  if (fs.existsSync(categoriesPath)) {
+    const rawCategories = fs.readFileSync(categoriesPath, "utf-8");
+    const { categories } = JSON.parse(rawCategories);
+    for (const cat of categories) {
+      await prisma.category.upsert({
+        where: { name: cat.name },
+        update: {},
+        create: { name: cat.name },
+      });
+    }
+    console.log(`✓ ${categories.length} categorias sincronizadas.`);
+  }
+
+  // 2. Processar 103 Perguntas Completas com Alternativa "D"
+  const questionsPath = path.join(
+    __dirname,
+    "../../../data/questions_complete.json",
+  );
   const rawData = fs.readFileSync(questionsPath, "utf-8");
-  const questionsData: JsonQuestion[] = JSON.parse(rawData);
-  console.log(`Encontradas ${questionsData.length} perguntas para processar.`);
+  const questionsData = JSON.parse(rawData);
+
+  console.log(`Processando ${questionsData.length} perguntas completas...`);
+
   for (const item of questionsData) {
-    // 1. Criar ou conectar a Categoria dinamicamente
     const category = await prisma.category.upsert({
       where: { name: item.category },
       update: {},
-      create: {
-        name: item.category,
-      },
+      create: { name: item.category },
     });
+
     const difficultyMap: Record<string, Difficulty> = {
       EASY: Difficulty.EASY,
       MEDIUM: Difficulty.MEDIUM,
       HARD: Difficulty.HARD,
     };
     const difficulty = difficultyMap[item.difficulty] || Difficulty.EASY;
-    // 2. Verificar se a pergunta já existe (pelo UUID ou título para evitar duplicação)
-    const existingQuestion = await prisma.question.findUnique({
+
+    // Upsert da Pergunta (cria ou atualiza os dados da pergunta)
+    const question = await prisma.question.upsert({
       where: { id: item.id },
+      update: {
+        title: item.question,
+        difficulty,
+        categoryId: category.id,
+        reference: item.reference,
+        explanation: item.explanation,
+        xpReward: item.xpReward,
+        difficultyScore: item.difficultyScore,
+        tags: item.tags,
+      },
+      create: {
+        id: item.id,
+        title: item.question,
+        difficulty,
+        categoryId: category.id,
+        reference: item.reference,
+        explanation: item.explanation,
+        xpReward: item.xpReward,
+        difficultyScore: item.difficultyScore,
+        tags: item.tags,
+      },
     });
-    if (!existingQuestion) {
-      await prisma.question.create({
-        data: {
-          id: item.id,
-          title: item.question,
-          difficulty: difficulty,
-          categoryId: category.id,
-          reference: item.reference,
-          explanation: item.explanation,
-          xpReward: item.xpReward,
-          difficultyScore: item.difficultyScore,
-          tags: item.tags,
-          timesPlayed: item.stats?.timesPlayed ?? 0,
-          correctRate: item.stats?.correctRate ?? 0,
-          averageAnswerTime: item.stats?.averageAnswerTime ?? 0,
-          alternatives: {
-            create: item.alternatives.map((alt) => ({
-              description: alt.description,
-              isCorrect: alt.isCorrect,
-            })),
-          },
-        },
-      });
-      console.log(`✓ Pergunta criada: "${item.question.substring(0, 30)}..."`);
-    } else {
-      console.log(
-        `- Pergunta já existe (pulando): "${item.question.substring(0, 30)}..."`,
-      );
-    }
+
+    // Sincroniza as 4 alternativas: remove as antigas (A, B, C) e insere as 4 completas (A, B, C, D)
+    await prisma.alternative.deleteMany({
+      where: { questionId: question.id },
+    });
+
+    await prisma.alternative.createMany({
+      data: item.alternatives.map((alt: any) => ({
+        questionId: question.id,
+        description: alt.description,
+        isCorrect: alt.isCorrect,
+      })),
+    });
   }
 
-  // 🏆 1. Início da Carga de Conquistas (dentro do main)
+  console.log(
+    "✅ Todas as 103 perguntas atualizadas com sucesso com 4 alternativas!",
+  );
+
+  // 3. Garantir Conquistas no banco
   console.log("🏆 Populando conquistas no banco de dados...");
   const achievements = [
     {
@@ -98,8 +109,7 @@ async function main() {
     {
       code: "MASTER_GOSPELS",
       name: "Mestre dos Evangelhos",
-      description:
-        "Obtenha domínio completo dos quatro Evangelhos (Mateus, Marcos, Lucas e João).",
+      description: "Obtenha domínio completo dos quatro Evangelhos.",
       rarity: "LEGENDARY",
       xpReward: 1000,
       icon: "master-gospels",
@@ -107,8 +117,7 @@ async function main() {
     {
       code: "WISDOM_OF_SOLOMON",
       name: "Sabedoria de Salomão",
-      description:
-        "Domine os livros sapienciais (Provérbios, Eclesiastes, Sabedoria, Cânticos).",
+      description: "Domine os livros sapienciais.",
       rarity: "EPIC",
       xpReward: 750,
       icon: "wisdom-of-solomon",
@@ -124,8 +133,7 @@ async function main() {
     {
       code: "PROPHET_OF_NATIONS",
       name: "Profeta das Nações",
-      description:
-        "Complete Isaías, Jeremias, Ezequiel e Daniel com pelo menos 90% de aproveitamento.",
+      description: "Complete os profetas com pelo menos 90% de aproveitamento.",
       rarity: "LEGENDARY",
       xpReward: 1000,
       icon: "prophet-of-nations",
@@ -151,13 +159,12 @@ async function main() {
         icon: ach.icon,
       },
     });
-    console.log(`✓ Conquista registrada: "${ach.name}"`);
   }
 
   console.log("🌱 Seed concluído com sucesso!");
-} // 2. Fim do main()
+}
 
-// 3. Orquestração de Erros e Desconexão
+// 4. Invocação do main com tratamento de erro e desconexão segura do Prisma
 main()
   .catch((e) => {
     console.error("❌ Erro durante a execução do seed:", e);

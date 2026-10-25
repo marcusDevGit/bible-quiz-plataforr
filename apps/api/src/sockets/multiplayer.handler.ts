@@ -20,7 +20,6 @@ interface Room {
   currentIndex: number;
   answerCount: number;
   theme?: string;
-  roundTimeout?: NodeJS.Timeout;
 }
 
 interface QueuePlayer {
@@ -35,6 +34,7 @@ interface QueuePlayer {
 // Em memória - gerenciamento das salas de jogo
 const rooms = new Map<string, Room>();
 const quickMatchQueue: QueuePlayer[] = [];
+const roomTimeouts = new Map<string, NodeJS.Timeout>();
 
 // Auxiliar para gerar código de sala de 6 dígitos único
 function generateRoomCode(): string {
@@ -480,8 +480,9 @@ async function startGame(io: Server, room: Room) {
 // Função auxiliar para enviar a próxima pergunta sem expor qual é a correta
 function sendNextQuestion(io: Server, room: Room) {
   // Limpa timer anterior se houver
-  if (room.roundTimeout) {
-    clearTimeout(room.roundTimeout);
+  const prevTimeout = roomTimeouts.get(room.code);
+  if (prevTimeout) {
+    clearTimeout(prevTimeout);
   }
   const currentQuestion = room.questions[room.currentIndex];
 
@@ -502,19 +503,21 @@ function sendNextQuestion(io: Server, room: Room) {
   });
 
   // ⏱️ TIMER DO SERVIDOR (20s): Se alguém não responder a tempo, encerra a rodada
-  room.roundTimeout = setTimeout(() => {
+  const time = setTimeout(() => {
     if (room.status === "playing") {
       finishRound(io, room);
     }
   }, 16000);
+  roomTimeouts.set(room.code, time);
 }
 
 // Função auxiliar para encerrar a rodada, pontuar e avançar
 function finishRound(io: Server, room: Room) {
   // Limpa o timer para não disparar duas vezes
-  if (room.roundTimeout) {
-    clearTimeout(room.roundTimeout);
-    room.roundTimeout = undefined;
+  const currentTimeout = roomTimeouts.get(room.code);
+  if (currentTimeout) {
+    clearTimeout(currentTimeout);
+    roomTimeouts.delete(room.code);
   }
 
   const currentQuestion = room.questions[room.currentIndex];

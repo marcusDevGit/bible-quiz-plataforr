@@ -38,6 +38,12 @@ export default function LobbyScreen() {
     socket.on("room_updated", (updatedRoom: any) => {
       if (updatedRoom.code === code) {
         setRoom(updatedRoom);
+        if (updatedRoom.status === "playing") {
+          router.replace({
+            pathname: "/multiplayer/game",
+            params: { code: String(code) }
+          })
+        }
       }
     });
 

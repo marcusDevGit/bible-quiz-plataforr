@@ -260,7 +260,8 @@ export default function MultiplayerGameScreen() {
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         className="flex-1 w-full"
-      >  <View className="max-w-2xl mx-auto w-full px-4 py-4">
+      >
+        <View className="max-w-2xl mx-auto w-full px-4 py-4">
 
           {/* Título da pergunta */}
           <View className="my-6 px-1">
