@@ -27,6 +27,10 @@ export default function ResultScreen() {
   const [bestTime, setBestTime] = useState<number | null>(null);
 
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const toggleExpand = (index: number) => {
+    setExpandedIndex((prev) => (prev === index ? null : index));
+  };
 
   // Parse defensivo: se o parâmetro vier quebrado, não crasha o app
   let parsedAnswers: MatchAnswer[] = [];
@@ -292,9 +296,7 @@ export default function ResultScreen() {
           <TouchableOpacity
             style={{ backgroundColor: "#ffffff", borderColor: "#00236f", borderWidth: 1.5 }}
             className="w-full p-4 rounded-2xl flex-row items-center justify-center gap-2 "
-            onPress={() => {
-              setIsReviewOpen(true)
-            }}
+            onPress={() => setIsReviewOpen(true)}
             activeOpacity={0.7}
           >
             <MaterialIcons name="fact-check" size={20} color="#00236f" />
@@ -326,7 +328,7 @@ export default function ResultScreen() {
             backgroundColor: "#ffffff",
             borderTopLeftRadius: 28,
             borderTopRightRadius: 28,
-            maxHeight: "75%",
+            maxHeight: "80%",
             paddingBottom: Math.max(insets.bottom, 20),
           }}
           className="p-6 w-full max-w-xl mx-auto">
@@ -345,42 +347,152 @@ export default function ResultScreen() {
             </TouchableOpacity>
           </View>
           {/* Lista de Respostas */}
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <View className="flex-col gap-3">
-              {parsedAnswers.map((ans, idx) => (
-                <View
-                  key={idx}
-                  style={{
-                    backgroundColor: ans.isCorrect ? "#f0fdf4" : "#fef2f2",
-                    borderColor: ans.isCorrect ? "#86efac" : "#fca5a5",
-                    borderWidth: 1,
-                  }}
-                  className="p-4 rounded-xl flex-row items-center justify-between"
-                >
-                  <View className="flex-row items-center gap-3">
-                    <MaterialIcons
-                      name={ans.isCorrect ? "check-circle" : "cancel"}
-                      size={22}
-                      color={ans.isCorrect ? "#16a34a" : "#dc2626"}
-                    />
-                    <Text className="font-semibold text-sm text-on-surface">
-                      Pergunta {idx + 1}
-                    </Text>
-                  </View>
-                  <Text
+          <ScrollView showsVerticalScrollIndicator={false} className="max-h-[500px]">
+            <View className="flex-col gap-3 my-2">
+              {parsedAnswers.map((ans, idx) => {
+                const isExpanded = expandedIndex === idx;
+                return (
+                  <View
+                    key={idx}
                     style={{
-                      color: ans.isCorrect ? "#15803d" : "#b91c1c",
+                      backgroundColor: ans.isCorrect ? "#f0fdf4" : "#fef2f2",
+                      borderColor: ans.isCorrect ? "#86efac" : "#fca5a5",
+                      borderWidth: 1.5,
                     }}
-                    className="text-xs font-bold uppercase tracking-wider"
+                    className="p-4 rounded-2xl flex-col"
                   >
-                    {ans.isCorrect ? "Acertou" : "Errou"}
-                  </Text>
-                </View>
-              ))}
+                    {/* Cabeçalho Clicável: Toca para expandir / recolher */}
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => toggleExpand(idx)}
+                      className="flex-row items-center justify-between"
+                    >
+                      <View className="flex-row items-center gap-2 flex-1 mr-2">
+                        <MaterialIcons
+                          name={ans.isCorrect ? "check-circle" : "cancel"}
+                          size={22}
+                          color={ans.isCorrect ? "#16a34a" : "#dc2626"}
+                        />
+                        <Text className="font-semibold text-sm text-on-surface">
+                          Questão {idx + 1}
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center gap-2">
+                        <View
+                          className={`px-2.5 py-0.5 rounded-full ${
+                            ans.isCorrect ? "bg-green-100" : "bg-red-100"
+                          }`}
+                        >
+                          <Text
+                            style={{
+                              color: ans.isCorrect ? "#15803d" : "#b91c1c",
+                            }}
+                            className="text-[11px] font-bold uppercase tracking-wider"
+                          >
+                            {ans.isCorrect ? "Acertou" : "Errou"}
+                          </Text>
+                        </View>
+                        <MaterialIcons
+                          name={isExpanded ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+                          size={22}
+                          color="#444651"
+                        />
+                      </View>
+                    </TouchableOpacity>
+
+                    {/* Conteúdo Expansível: Mostra Pergunta, Respostas e Explicação ao clicar */}
+                    {isExpanded && (
+                      <View className="mt-3 pt-3 border-t border-black/5 flex-col gap-3">
+                        {/* Texto da Pergunta */}
+                        <Text className="font-bold text-on-surface text-sm leading-snug">
+                          {ans.questionTitle || "Enunciado da questão não registrado nesta partida."}
+                        </Text>
+
+                        {/* Bloco de Respostas */}
+                        <View className="flex-col gap-1.5">
+                          {/* Resposta do Usuário */}
+                          <View
+                            style={{
+                              backgroundColor: ans.isCorrect ? "#dcfce7" : "#fee2e2",
+                              borderColor: ans.isCorrect ? "#86efac" : "#fca5a5",
+                              borderWidth: 1,
+                            }}
+                            className="p-2.5 rounded-xl flex-row items-start gap-2"
+                          >
+                            <MaterialIcons
+                              name={ans.isCorrect ? "done" : "close"}
+                              size={16}
+                              color={ans.isCorrect ? "#15803d" : "#b91c1c"}
+                              style={{ marginTop: 2 }}
+                            />
+                            <View className="flex-1">
+                              <Text className="text-[10px] font-bold text-on-surface-variant uppercase">
+                                Sua resposta:
+                              </Text>
+                              <Text
+                                style={{ color: ans.isCorrect ? "#15803d" : "#b91c1c" }}
+                                className="text-xs font-semibold mt-0.5"
+                              >
+                                {ans.selectedAlternative || (ans.isCorrect ? "Resposta correta" : "Tempo esgotado / Pulou")}
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Resposta Correta (quando errou) */}
+                          {!ans.isCorrect && ans.correctAlternative && (
+                            <View
+                              style={{
+                                backgroundColor: "#f0fdf4",
+                                borderColor: "#86efac",
+                                borderWidth: 1,
+                              }}
+                              className="p-2.5 rounded-xl flex-row items-start gap-2"
+                            >
+                              <MaterialIcons
+                                name="check"
+                                size={16}
+                                color="#15803d"
+                                style={{ marginTop: 2 }}
+                              />
+                              <View className="flex-1">
+                                <Text className="text-[10px] font-bold text-green-800 uppercase">
+                                  Resposta Correta:
+                                </Text>
+                                <Text className="text-xs font-semibold text-green-900 mt-0.5">
+                                  {ans.correctAlternative}
+                                </Text>
+                              </View>
+                            </View>
+                          )}
+                        </View>
+
+                        {/* Explicação Bíblica e Referência */}
+                        {(ans.explanation || ans.reference) && (
+                          <View className="bg-white/80 rounded-xl p-3 border border-outline-variant/30 flex-col gap-1">
+                            {ans.reference && (
+                              <View className="flex-row items-center gap-1">
+                                <FontAwesome5 name="bible" size={11} color="#00236f" />
+                                <Text className="text-[11px] font-bold text-[#00236f]">
+                                  {ans.reference}
+                                </Text>
+                              </View>
+                            )}
+                            {ans.explanation && (
+                              <Text className="text-xs text-on-surface-variant leading-relaxed">
+                                {ans.explanation}
+                              </Text>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </View>
           </ScrollView>
           {/* Fechar Modal */}
-          <TouchableOpacity
+          < TouchableOpacity
             style={{ backgroundColor: "#00236f" }}
             className="w-full py-3.5 rounded-xl items-center justify-center mt-4"
             onPress={() => setIsReviewOpen(false)}

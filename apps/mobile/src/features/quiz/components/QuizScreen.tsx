@@ -56,10 +56,18 @@ export default function QuizScreen() {
   const handleTimeoutOrSkip = useCallback(() => {
     if (!questions || !questions[currentIndex]) return;
     const currentQ = questions[currentIndex];
-
+    const correctAlt = currentQ.alternatives.find((a: any) => a.isCorrect);
     const updatedAnswers: MatchAnswer[] = [
       ...answers,
-      { questionId: currentQ.id, isCorrect: false },
+      {
+        questionId: currentQ.id, isCorrect: false,
+        questionTitle: currentQ.title,
+        reference: currentQ.reference,
+        explanation: currentQ.explanation,
+        selectedAlternative: "Tempo esgotado / Pulou",
+        correctAlternative: correctAlt?.description,
+
+      },
     ];
     setAnswers(updatedAnswers);
 
@@ -102,9 +110,18 @@ export default function QuizScreen() {
       setScore(newScore);
     }
 
+    const correctAlt = currentQ.alternatives.find((a: any) => a.isCorrect);
+    const selectedAlt = currentQ.alternatives[selectedOption];
     const updatedAnswers: MatchAnswer[] = [
       ...answers,
-      { questionId: currentQ.id, isCorrect },
+      {
+        questionId: currentQ.id, isCorrect,
+        questionTitle: currentQ.title,
+        reference: currentQ.reference,
+        explanation: currentQ.explanation,
+        selectedAlternative: selectedAlt?.description || "",
+        correctAlternative: correctAlt?.description || "",
+      },
     ];
     setAnswers(updatedAnswers);
 
@@ -345,7 +362,9 @@ export default function QuizScreen() {
         {/* Rodapé: Pular e Confirmar com Safe Area Insets */}
         <View
           style={{
-            paddingBottom: Math.max(insets.bottom, 16),
+            paddingTop: 16,
+            paddingBottom: Math.max(insets.bottom + 12, 28),
+            paddingHorizontal: 20,
             backgroundColor: "#ffffff",
             borderTopWidth: 1,
             borderTopColor: "#e6e8ea",

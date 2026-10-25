@@ -24,6 +24,11 @@ interface PaginatedQuestions {
 export interface MatchAnswer {
   questionId: string;
   isCorrect: boolean;
+  questionTitle?: string;
+  reference?: string;
+  explanation?: string;
+  selectedAlternative?: string;
+  correctAlternative?: string;
 }
 
 export const quizService = {
