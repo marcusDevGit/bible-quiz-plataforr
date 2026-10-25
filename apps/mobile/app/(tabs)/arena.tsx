@@ -62,7 +62,7 @@ export default function ArenaRoute() {
     socket.on("quick_match_found", (data: { code: string, room: any }) => {
       setIsSearchingMatch(false);
       router.push({
-        pathname: "/multiplayer/lobby",
+        pathname: "/multiplayer/game",
         params: { code: data.code },
       });
     });
