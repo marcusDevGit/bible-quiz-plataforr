@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -8,11 +8,12 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { socket } from "@/services/socket";
 import { useQuery } from "@tanstack/react-query";
 import { authService } from "@/features/auth/services/auth.service";
+import { MatchAnswer } from "~/src/features/quiz/services/quiz.service";
 
 export default function MultiplayerGameScreen() {
   const router = useRouter();
@@ -36,12 +37,21 @@ export default function MultiplayerGameScreen() {
   const [referenceText, setReferenceText] = useState("");
   const [roundScores, setRoundScores] = useState<any[]>([]);
 
+  const answerHistoryRef = useRef<MatchAnswer[]>([]);
+  const currentQuestionRef = useRef<any>(null);
+  const selectedOptionIdRef = useRef<string | null>(null);
+
   // Perfil do Jogador Logado
   const { data: profileData } = useQuery({
     queryKey: ["currentUserProfile"],
     queryFn: () => authService.getProfile(),
   });
   const loggedUser = profileData?.user;
+  const loggedUserRef = useRef(loggedUser);
+  useEffect(() => {
+    loggedUserRef.current = loggedUser;
+  }, [loggedUser]);
+
 
   useEffect(() => {
     // Escuta a próxima pergunta
@@ -58,7 +68,9 @@ export default function MultiplayerGameScreen() {
         setTotalQuestions(data.totalQuestions)
       }
       setCurrentQuestion(data.question);
+      currentQuestionRef.current = data.question;
       setSelectedOptionId(null);
+      selectedOptionIdRef.current = null
       setSubmitted(false);
       setShowingExplanation(false);
       setCorrectAlternativeId(null);
@@ -74,6 +86,26 @@ export default function MultiplayerGameScreen() {
       setRoundScores(data.results);
       setShowingExplanation(true);
       setNextQuestionCountdown(EXPLANATION_DURATION)
+
+      // Salva histórico 
+      const currQ = currentQuestionRef.current;
+      if (currQ) {
+        // const myResult = data.results.find((r: any) => r.userId === loggedUser?.id);
+        const myResult = data.results?.find((r: any) => r.userId === (loggedUserRef.current?.id || loggedUser?.id));
+        const mySelectedId = selectedOptionIdRef.current;
+        const selectedAlt = currQ.alternatives?.find((a: any) => a.id === mySelectedId);
+        const correctAlt = currQ.alternatives?.find((a: any) => a.id === data.correctAlternativeId);
+
+        answerHistoryRef.current.push({
+          questionId: currQ.id,
+          isCorrect: myResult ? myResult.isCorrect : false,
+          questionTitle: currQ.title,
+          reference: data.reference,
+          explanation: data.explanation,
+          selectedAlternative: selectedAlt?.description || (mySelectedId ? "Opção selecionada" : "Não respondeu a tempo"),
+          correctAlternative: correctAlt?.description || "",
+        })
+      }
     });
 
     // Escuta o encerramento do jogo
@@ -85,6 +117,7 @@ export default function MultiplayerGameScreen() {
           players: JSON.stringify(data.players),
           winnerId: data.winnerId || "",
           abandoned: data.abandoned ? "true" : "false",
+          answers: JSON.stringify(answerHistoryRef.current),
         },
       });
     });
@@ -139,6 +172,7 @@ export default function MultiplayerGameScreen() {
   const handleSelectAlternative = (altId: string) => {
     if (submitted || showingExplanation) return;
     setSelectedOptionId(altId);
+    selectedOptionIdRef.current = altId
     setSubmitted(true);
     // Envia a resposta selecionada ao backend em tempo real
     socket.emit("submit_answer", {
@@ -261,7 +295,33 @@ export default function MultiplayerGameScreen() {
         showsVerticalScrollIndicator={false}
         className="flex-1 w-full"
       >
-        <View className="max-w-2xl mx-auto w-full px-4 py-4">
+        <View className="max-w-2xl mx-auto w-full mt-4 px-4 py-4">
+          {/* Badges de Metadados: Categoria ("Evangelhos") e Referência */}
+          <View className="flex-row items-center justify-center gap-2 mt-6 mb-2">
+            {currentQuestion.category && (
+              <View
+                style={{ backgroundColor: "#e8edff" }}
+                className="flex-row items-center gap-1 px-3 py-1 rounded-full"
+              >
+                <MaterialIcons name="local-offer" size={12} color="#00236f" />
+                <Text className="text-primary font-bold text-xs uppercase tracking-wider">
+                  {currentQuestion.category.name}
+                </Text>
+              </View>
+            )}
+            {currentQuestion.reference && (
+              <View
+                style={{ backgroundColor: "#ffeed4" }}
+                className="flex-row items-center gap-1 px-3 py-1 rounded-full"
+              >
+                <FontAwesome5 name="bible" size={10} color="#684000" />
+                <Text className="text-on-secondary-container font-semibold text-xs">
+                  {currentQuestion.reference}
+                </Text>
+              </View>
+            )}
+          </View>
+
 
           {/* Título da pergunta */}
           <View className="my-6 px-1">

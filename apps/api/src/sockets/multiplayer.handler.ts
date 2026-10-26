@@ -305,6 +305,8 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
         question: {
           id: currentQuestion.id,
           title: currentQuestion.title,
+          category: currentQuestion.category,
+          reference: currentQuestion.reference,
           alternatives: safeAlternatives,
         },
       });
@@ -446,6 +448,7 @@ async function startGame(io: Server, room: Room) {
       take: 10,
       include: {
         alternatives: true,
+        category: true,
       },
     });
 
@@ -498,6 +501,8 @@ function sendNextQuestion(io: Server, room: Room) {
     question: {
       id: currentQuestion.id,
       title: currentQuestion.title,
+      category: currentQuestion.category,
+      reference: currentQuestion.reference,
       alternatives: safeAlternatives,
     },
   });
