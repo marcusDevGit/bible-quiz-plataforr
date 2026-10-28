@@ -54,9 +54,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: "Jogar",
+          title: "Quiz",
           tabBarIcon: ({ color }) => (
-            <MaterialIcons name="extension" size={28} color={color} />
+            <MaterialIcons name="quiz" size={28} color={color} />
           ),
         }}
       />
