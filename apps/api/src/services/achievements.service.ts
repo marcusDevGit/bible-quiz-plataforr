@@ -34,6 +34,7 @@ export class AchievementsService {
       await this.checkFirstStep(userId, tx);
       await this.checkMasterGospels(userId, lastMatchScore, lastMatchTotal, tx);
       await this.checkWisdomOfSolomon(userId, tx);
+      await this.checkProphetOfNations(userId, tx);
     } catch (error) {
       console.error("❌ Erro ao validar conquistas pós-partida:", error);
     }
@@ -55,10 +56,14 @@ export class AchievementsService {
     if (userAch && userAch.progress >= 100) return;
 
     const totalQuestions = await tx.matchQuestion.count({
-      where: { match: { playerOne: userId } },
+      where: {
+        match: {
+          OR: [{ playerOne: userId }, { playerTwo: userId }],
+        },
+      },
     });
 
-    const progress = Math.min(Math.round((totalQuestions / 100) * 100), 100);
+    const progress = Math.min(100, Math.round((totalQuestions / 10) * 100));
 
     if (progress >= 100) {
       await achievementsRepository.unlock(userId, achievement.id, tx);
@@ -100,7 +105,9 @@ export class AchievementsService {
 
     const correctQuestions = await tx.matchQuestion.findMany({
       where: {
-        match: { playerOne: userId },
+        match: {
+          OR: [{ playerOne: userId }, { playerTwo: userId }],
+        },
         isCorrect: true,
       },
       include: { question: true },
@@ -146,7 +153,9 @@ export class AchievementsService {
     if (userAch && userAch.progress >= 100) return;
     const countSapienciais = await tx.matchQuestion.count({
       where: {
-        match: { playerOne: userId },
+        match: {
+          OR: [{ playerOne: userId }, { playerTwo: userId }],
+        },
         isCorrect: true,
         question: {
           category: {
@@ -164,6 +173,72 @@ export class AchievementsService {
       },
     });
     const progress = Math.min(Math.round((countSapienciais / 100) * 100), 100);
+    if (progress >= 100) {
+      await achievementsRepository.unlock(userId, achievement.id, tx);
+
+      await tx.ranking.update({
+        where: { userId },
+        data: { points: { increment: achievement.xpReward } },
+      });
+    } else {
+      await achievementsRepository.updateProgress(
+        userId,
+        achievement.id,
+        progress,
+        tx,
+      );
+    }
+  }
+
+  private async checkProphetOfNations(
+    userId: string,
+    tx: Prisma.TransactionClient = prisma,
+  ) {
+    const code = "PROPHET_OF_NATIONS";
+    const achievement = await achievementsRepository.findByCode(code, tx);
+    if (!achievement) return;
+
+    const userAch = await achievementsRepository.findUserAchievement(
+      userId,
+      achievement.id,
+      tx,
+    );
+    if (userAch && userAch.progress >= 100) return;
+
+    const prophetFilter: Prisma.MatchQuestionWhereInput = {
+      match: {
+        OR: [{ playerOne: userId }, { playerTwo: userId }],
+      },
+      question: {
+        category: {
+          name: {
+            in: ["Profetas", "Daniel", "Isaías", "Jeremias", "Ezequiel"],
+          },
+        },
+      },
+    };
+
+    const [totalProphetQuestions, correctProphetQuestions] = await Promise.all([
+      tx.matchQuestion.count({ where: prophetFilter }),
+      tx.matchQuestion.count({ where: { ...prophetFilter, isCorrect: true } }),
+    ]);
+
+    if (totalProphetQuestions === 0) return;
+
+    const accuracy = correctProphetQuestions / totalProphetQuestions;
+    const targetQuestions = 10;
+    const progress =
+      totalProphetQuestions >= targetQuestions && accuracy >= 0.9
+        ? 100
+        : Math.min(
+            99,
+            Math.round(
+              Math.min(totalProphetQuestions / targetQuestions, 1) *
+                Math.min(accuracy / 0.9, 1) *
+                100,
+            ),
+          );
+
     if (progress >= 100) {
       await achievementsRepository.unlock(userId, achievement.id, tx);
 

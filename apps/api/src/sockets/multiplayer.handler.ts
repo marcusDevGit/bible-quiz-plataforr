@@ -1,5 +1,10 @@
 import { Server, Socket } from "socket.io";
 import { prisma } from "../prisma/client";
+import { AchievementsService } from "../services/achievements.service";
+import { StreakService } from "../services/streak.service";
+
+const achievementsService = new AchievementsService();
+const streakService = new StreakService();
 
 interface Player {
   socketId: string;
@@ -35,6 +40,14 @@ interface QueuePlayer {
 const rooms = new Map<string, Room>();
 const quickMatchQueue: QueuePlayer[] = [];
 const roomTimeouts = new Map<string, NodeJS.Timeout>();
+
+function clearRoomTimeout(code: string) {
+  const timeout = roomTimeouts.get(code);
+  if (timeout) {
+    clearTimeout(timeout);
+    roomTimeouts.delete(code);
+  }
+}
 
 // Auxiliar para gerar código de sala de 6 dígitos único
 function generateRoomCode(): string {
@@ -656,6 +669,33 @@ async function endGame(io: Server, room: Room) {
             losses: winnerId === p1.userId ? 1 : 0,
           },
         });
+
+        try {
+          const totalQuestions = room.questions.length || 10;
+          const p1CorrectCount = p1.answers.filter((a) => a.isCorrect).length;
+          const p2CorrectCount = p2.answers.filter((a) => a.isCorrect).length;
+
+          await streakService.updateUserStreak(p1.userId, tx);
+          await streakService.updateUserStreak(p2.userId, tx);
+
+          await achievementsService.checkMatchAchievements(
+            p1.userId,
+            p1CorrectCount,
+            totalQuestions,
+            tx,
+          );
+          await achievementsService.checkMatchAchievements(
+            p2.userId,
+            p2CorrectCount,
+            totalQuestions,
+            tx,
+          );
+        } catch (achError) {
+          console.error(
+            "Erro ao processar streak/conquistas no multiplayer:",
+            achError,
+          );
+        }
       });
     }
 
@@ -680,7 +720,7 @@ async function endGame(io: Server, room: Room) {
 }
 
 // Gerencia saída do jogador voluntária ou queda de conexão
-function handlePlayerLeaving(io: Server, socket: Socket, code: string) {
+async function handlePlayerLeaving(io: Server, socket: Socket, code: string) {
   const upperCode = code.toUpperCase();
   const room = rooms.get(upperCode);
 
@@ -697,16 +737,82 @@ function handlePlayerLeaving(io: Server, socket: Socket, code: string) {
 
   // Se a sala ficou vazia, remove ela da memória
   if (room.players.length === 0) {
+    clearRoomTimeout(upperCode);
     rooms.delete(upperCode);
     console.log(`🗑️ Sala ${upperCode} excluída por estar vazia`);
   } else {
     // Se o jogo estava rodando, encerra a partida por WO
     if (room.status === "playing") {
       room.status = "finished";
+      clearRoomTimeout(upperCode);
+
       const remainingPlayer = room.players[0];
       console.log(
         `🏆 Vitória por WO na sala ${upperCode} para ${remainingPlayer.name}`,
       );
+
+      try {
+        await prisma.$transaction(async (tx) => {
+          const match = await tx.match.create({
+            data: {
+              playerOne: remainingPlayer.userId,
+              playerTwo: leavingPlayer.userId,
+              winner: remainingPlayer.userId,
+              score: remainingPlayer.score,
+            },
+          });
+
+          const matchQuestionsData = [
+            ...remainingPlayer.answers.map((ans) => ({
+              matchId: match.id,
+              questionId: ans.questionId,
+              isCorrect: ans.isCorrect,
+            })),
+            ...leavingPlayer.answers.map((ans) => ({
+              matchId: match.id,
+              questionId: ans.questionId,
+              isCorrect: ans.isCorrect,
+            })),
+          ];
+
+          if (matchQuestionsData.length > 0) {
+            await tx.matchQuestion.createMany({
+              data: matchQuestionsData,
+            });
+          }
+
+          await tx.ranking.upsert({
+            where: { userId: remainingPlayer.userId },
+            update: {
+              points: { increment: remainingPlayer.score },
+              wins: { increment: 1 },
+            },
+            create: {
+              userId: remainingPlayer.userId,
+              points: remainingPlayer.score,
+              wins: 1,
+              losses: 0,
+            },
+          });
+
+          await tx.ranking.upsert({
+            where: { userId: leavingPlayer.userId },
+            update: {
+              losses: { increment: 1 },
+            },
+            create: {
+              userId: leavingPlayer.userId,
+              points: 0,
+              wins: 0,
+              losses: 1,
+            },
+          });
+
+          await streakService.updateUserStreak(remainingPlayer.userId, tx);
+        });
+      } catch (err) {
+        console.error("Erro ao persistir vitória por WO no banco:", err);
+      }
 
       io.to(upperCode).emit("game_end", {
         players: room.players.map((p) => ({

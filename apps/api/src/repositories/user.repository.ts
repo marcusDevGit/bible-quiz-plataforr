@@ -16,6 +16,9 @@ export class UserRepository {
         name: true,
         email: true,
         avatar: true,
+        currentStreak: true,
+        bestStreak: true,
+        lastActiveDate: true,
         createdAt: true,
       },
     });

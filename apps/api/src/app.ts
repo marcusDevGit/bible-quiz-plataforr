@@ -9,7 +9,6 @@ import { rankingRouter } from "./routes/ranking.routes"
 import { matchRouter } from "./routes/match.routes"
 import achievementsRouter from "./routes/achievements.routes"
 import { errorMiddleware } from "./middlewares/error-middleware"
-import { AppError } from "./error/app-error";
 
 
 export const app = express();
@@ -21,11 +20,6 @@ app.use(express.json());
 app.get("/", (req, res) => {
     res.json({message: " Bible Quiz API is running"});
 })
-
-app.get("/test-async-error", async (req, res) => {
-  await Promise.resolve();
-  throw new AppError("Teste de erro assíncrono capturado com sucesso!", 418);
-});
 
 app.use(authRouter)
 app.use(questionRouter);

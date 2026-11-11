@@ -1,5 +1,5 @@
 import { prisma } from "../prisma/client";
-import { Rarity, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 export class AchievementsRepository {
   async listAllWithUserStatus(userId: string) {
@@ -42,11 +42,13 @@ export class AchievementsRepository {
       },
       update: {
         progress: 100,
+        unlockedAt: new Date(),
       },
       create: {
         userId,
         achievementId,
         progress: 100,
+        unlockedAt: new Date(),
       },
     });
   }

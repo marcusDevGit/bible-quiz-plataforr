@@ -28,7 +28,7 @@ Para manter o código desacoplado, testável e de fácil manutenção, a API est
 Crie um arquivo `.env` na raiz do diretório `apps/api` com as seguintes configurações:
 
 ```env
-PORT=3000
+PORT=3001
 DATABASE_URL="postgresql://usuario:senha@host/dbname?sslmode=require"
 JWT_SECRET="sua_chave_secreta_jwt_aqui"
 ```
@@ -53,7 +53,7 @@ Inicialize o servidor local:
 ```bash
 npm run dev
 ```
-A API estará disponível por padrão em `http://localhost:3000`.
+A API estará disponível por padrão em `http://localhost:3001`.
 
 ---
 

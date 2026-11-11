@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "windows", "debian-openssl-3.0.x"]
 }
 
@@ -28,6 +28,10 @@ model User {
   avatar    String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  currentStreak  Int       @default(0) @map("current_streak")
+  bestStreak     Int       @default(0) @map("best_streak")
+  lastActiveDate DateTime? @map("last_active_date")
 
   ranking          Ranking?
   matchesAsPlayer1 Match[]           @relation("PlayerOne")

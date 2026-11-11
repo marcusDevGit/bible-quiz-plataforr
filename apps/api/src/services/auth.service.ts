@@ -3,8 +3,10 @@ import jwt from "jsonwebtoken";
 import { UserRepository } from "../repositories/user.repository";
 import { AppError } from "../error/app-error";
 import { LoginInput, RegisterInput } from "@bible-quiz/shared-validation";
+import { StreakService } from "./streak.service";
 
 const userRepository = new UserRepository();
+const streakService = new StreakService();
 const JWT_SECRET = process.env.JWT_SECRET || "secret_Bible_DeveLop_amb";
 
 export class AuthService {
@@ -41,12 +43,16 @@ export class AuthService {
 
     const token = jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: "7d" });
 
+    const streak = await streakService.updateUserStreak(user.id);
+
     return {
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         avatar: user.avatar,
+        currentStreak: streak.currentStreak,
+        bestStreak: streak.bestStreak,
       },
       token,
     };
