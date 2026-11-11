@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getQuestions } from "../service/question.service";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getQuestions,
+  deleteQuestion,
+  type Question,
+} from "../service/question.service";
 import toast from "react-hot-toast";
 import { QuestionModal } from "./QuestionModal";
 
@@ -24,12 +28,47 @@ const difficultyBadges = {
 
 export function QuestionTable() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [page, setPage] = useState(1);
+  const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["questions", page],
     queryFn: () => getQuestions(page, 10),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteQuestion,
+    onSuccess: () => {
+      toast.success("Pergunta excluída com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["questions"] });
+      queryClient.invalidateQueries({ queryKey: ["questions-total"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+    onError: (err: Error) => {
+      toast.error(`Erro ao excluir pergunta: ${err.message}`);
+    },
+  });
+
+  const handleCreateClick = () => {
+    setEditingQuestion(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditClick = (question: Question) => {
+    setEditingQuestion(question);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = (question: Question) => {
+    if (
+      window.confirm(
+        `Tem certeza que deseja excluir a pergunta "${question.title}"?`,
+      )
+    ) {
+      deleteMutation.mutate(question.id);
+    }
+  };
 
   useEffect(() => {
     if (isError && error) {
@@ -44,14 +83,18 @@ export function QuestionTable() {
     <div className="bg-surface border border-outline-variant rounded-xl shadow-sm overflow-hidden flex flex-col">
       <QuestionModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingQuestion(null);
+        }}
+        questionToEdit={editingQuestion}
       />
       <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-bright">
         <h2 className="font-title-md text-title-md text-on-surface">
           Gerenciamento de Perguntas
         </h2>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleCreateClick}
           className="bg-primary text-on-primary px-4 py-2 rounded-lg font-label-lg text-label-lg flex items-center gap-2 hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm cursor-pointer"
         >
           <span className="material-symbols-outlined text-[20px]">add</span>
@@ -116,7 +159,8 @@ export function QuestionTable() {
                     </td>
                     <td className="py-4 px-6 text-right space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
-                        className="text-primary hover:text-primary-container transition-colors p-1"
+                        onClick={() => handleEditClick(question)}
+                        className="text-primary hover:text-primary-container transition-colors p-1 cursor-pointer"
                         title="Editar"
                       >
                         <span className="material-symbols-outlined text-[20px]">
@@ -124,7 +168,9 @@ export function QuestionTable() {
                         </span>
                       </button>
                       <button
-                        className="text-error hover:text-on-error-container transition-colors p-1"
+                        onClick={() => handleDeleteClick(question)}
+                        disabled={deleteMutation.isPending}
+                        className="text-error hover:text-on-error-container transition-colors p-1 cursor-pointer disabled:opacity-50"
                         title="Deletar"
                       >
                         <span className="material-symbols-outlined text-[20px]">

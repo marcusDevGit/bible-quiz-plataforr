@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createQuestion } from "../service/question.service";
 import {
+  createQuestion,
+  updateQuestion,
   type Difficulty,
   type QuestionInput,
   type AlternativeInput,
+  type Question,
 } from "../service/question.service";
 import { getCategories } from "../service/categories.service";
 import toast from "react-hot-toast";
@@ -12,25 +14,26 @@ import toast from "react-hot-toast";
 interface QuestionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  questionToEdit?: Question | null;
 }
-export function QuestionModal({ isOpen, onClose }: QuestionModalProps) {
+
+const DEFAULT_ALTERNATIVES: AlternativeInput[] = [
+  { description: "", isCorrect: true },
+  { description: "", isCorrect: false },
+  { description: "", isCorrect: false },
+  { description: "", isCorrect: false },
+];
+
+export function QuestionModal({
+  isOpen,
+  onClose,
+  questionToEdit,
+}: QuestionModalProps) {
   const queryClient = useQueryClient();
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: getCategories,
     enabled: isOpen,
-  });
-
-  const mutation = useMutation({
-    mutationFn: createQuestion,
-    onSuccess: () => {
-      toast.success("Pergunta criada com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["questions"] });
-      onClose();
-    },
-    onError: (error: Error) => {
-      toast.error(`Erro ao criar pergunta: ${error.message}`);
-    },
   });
 
   const [title, setTitle] = useState("");
@@ -42,12 +45,70 @@ export function QuestionModal({ isOpen, onClose }: QuestionModalProps) {
   const [difficultyScore, setDifficultyScore] = useState(1);
   const [tags, setTags] = useState("");
 
-  const [alternatives, setAlternatives] = useState<AlternativeInput[]>([
-    { description: "", isCorrect: true },
-    { description: "", isCorrect: false },
-    { description: "", isCorrect: false },
-    { description: "", isCorrect: false },
-  ]);
+  const [alternatives, setAlternatives] = useState<AlternativeInput[]>(
+    DEFAULT_ALTERNATIVES.map((a) => ({ ...a })),
+  );
+
+  useEffect(() => {
+    if (questionToEdit) {
+      setTitle(questionToEdit.title || "");
+      setCategoryId(questionToEdit.categoryId || "");
+      setDifficulty(questionToEdit.difficulty || "EASY");
+      setReference(questionToEdit.reference || "");
+      setExplanation(questionToEdit.explanation || "");
+      setXpReward(questionToEdit.xpReward ?? 10);
+      setDifficultyScore(questionToEdit.difficultyScore ?? 1);
+      setTags(Array.isArray(questionToEdit.tags) ? questionToEdit.tags.join(", ") : "");
+      if (
+        Array.isArray(questionToEdit.alternatives) &&
+        questionToEdit.alternatives.length > 0
+      ) {
+        setAlternatives(
+          questionToEdit.alternatives.map((alt) => ({
+            description: alt.description,
+            isCorrect: alt.isCorrect,
+          })),
+        );
+      } else {
+        setAlternatives(DEFAULT_ALTERNATIVES.map((a) => ({ ...a })));
+      }
+    } else {
+      setTitle("");
+      setCategoryId("");
+      setDifficulty("EASY");
+      setReference("");
+      setExplanation("");
+      setXpReward(10);
+      setDifficultyScore(1);
+      setTags("");
+      setAlternatives(DEFAULT_ALTERNATIVES.map((a) => ({ ...a })));
+    }
+  }, [questionToEdit, isOpen]);
+
+  const mutation = useMutation({
+    mutationFn: (payload: QuestionInput) => {
+      if (questionToEdit) {
+        return updateQuestion(questionToEdit.id, payload);
+      }
+      return createQuestion(payload);
+    },
+    onSuccess: () => {
+      toast.success(
+        questionToEdit
+          ? "Pergunta atualizada com sucesso!"
+          : "Pergunta criada com sucesso!",
+      );
+      queryClient.invalidateQueries({ queryKey: ["questions"] });
+      queryClient.invalidateQueries({ queryKey: ["questions-total"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      onClose();
+    },
+    onError: (error: Error) => {
+      toast.error(
+        `Erro ao ${questionToEdit ? "atualizar" : "criar"} pergunta: ${error.message}`,
+      );
+    },
+  });
 
   if (!isOpen) return null;
 
@@ -97,7 +158,7 @@ export function QuestionModal({ isOpen, onClose }: QuestionModalProps) {
         {/* Cabeçalho Fixo */}
         <div className="p-6 border-b border-outline-variant">
           <h2 className="text-title-lg font-title-lg text-on-surface">
-            Nova Pergunta
+            {questionToEdit ? "Editar Pergunta" : "Nova Pergunta"}
           </h2>
         </div>
 
@@ -269,7 +330,11 @@ export function QuestionModal({ isOpen, onClose }: QuestionModalProps) {
             className="px-6 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container transition-colors font-label-lg shadow-sm"
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? "Salvando..." : "Salvar Pergunta"}
+            {mutation.isPending
+              ? "Salvando..."
+              : questionToEdit
+                ? "Atualizar Pergunta"
+                : "Salvar Pergunta"}
           </button>
         </div>
       </div>

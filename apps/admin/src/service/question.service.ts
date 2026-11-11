@@ -70,3 +70,23 @@ export async function createQuestion(data: QuestionInput): Promise<Question> {
     body: JSON.stringify(data),
   });
 }
+
+export async function updateQuestion(
+  id: string,
+  data: QuestionInput,
+): Promise<Question> {
+  const response = await apiFetch<{ message: string; question: Question }>(
+    `/questions/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    },
+  );
+  return response.question;
+}
+
+export async function deleteQuestion(id: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/questions/${id}`, {
+    method: "DELETE",
+  });
+}

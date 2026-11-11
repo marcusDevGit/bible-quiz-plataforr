@@ -1,21 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createCategory } from "../service/categories.service";
+import {
+  createCategory,
+  updateCategory,
+  type Category,
+} from "../service/categories.service";
 import toast from "react-hot-toast";
 
 interface CategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
+  categoryToEdit?: Category | null;
 }
 
-export function CategoryModal({ isOpen, onClose }: CategoryModalProps) {
+export function CategoryModal({
+  isOpen,
+  onClose,
+  categoryToEdit,
+}: CategoryModalProps) {
   const [name, setName] = useState("");
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    if (categoryToEdit) {
+      setName(categoryToEdit.name);
+    } else {
+      setName("");
+    }
+  }, [categoryToEdit, isOpen]);
+
   const mutation = useMutation({
-    mutationFn: createCategory,
+    mutationFn: (data: { name: string }) => {
+      if (categoryToEdit) {
+        return updateCategory(categoryToEdit.id, data);
+      }
+      return createCategory(data);
+    },
     onSuccess: () => {
-      toast.success("Categoria criada com sucesso!");
+      toast.success(
+        categoryToEdit
+          ? "Categoria atualizada com sucesso!"
+          : "Categoria criada com sucesso!",
+      );
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       setName("");
       onClose();
@@ -31,14 +57,14 @@ export function CategoryModal({ isOpen, onClose }: CategoryModalProps) {
     e.preventDefault();
     if (!name.trim()) return toast.error("O nome é obrigatório!");
 
-    mutation.mutate({ name });
+    mutation.mutate({ name: name.trim() });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-surface w-full max-w-md rounded-xl shadow-lg border border-outline-variant p-6">
         <h2 className="text-title-lg font-title-lg text-on-surface mb-4">
-          Nova Categoria
+          {categoryToEdit ? "Editar Categoria" : "Nova Categoria"}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="block text-label-md font-label-md text-on-surface-variant mb-1">
