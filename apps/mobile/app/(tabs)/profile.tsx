@@ -50,6 +50,33 @@ export default function ProfileScreen() {
   const currentXPInLevel = userPoints % XP_PER_LEVEL;
   const progressPercent = Math.min(100, Math.round((currentXPInLevel / XP_PER_LEVEL) * 100));
 
+  const totalMatches =
+    loggedUser?.stats?.totalMatches ??
+    loggedUser?.matchesPlayed ??
+    loggedUser?._count?.matchesAsPlayerOne ??
+    0;
+  const totalWins = loggedUser?.stats?.wins ?? 0;
+  const accuracyPercent = loggedUser?.stats?.accuracy ?? 0;
+  const recentMatches: any[] = Array.isArray(loggedUser?.recentMatches)
+    ? loggedUser.recentMatches
+    : [];
+
+  const formatMatchDate = (dateStr?: string) => {
+    if (!dateStr) return "Recente";
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return "Recente";
+    const diffMs = Date.now() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return "Agora mesmo";
+    if (diffMins < 60) return `Há ${diffMins} min`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `Há ${diffHours}h`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return "Ontem";
+    if (diffDays < 7) return `Há ${diffDays} dias`;
+    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  };
+
   const formattedMemberSince = loggedUser?.createdAt
     ? `Membro desde ${new Date(loggedUser.createdAt).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}`
     : loggedUser?.email ?? "Membro BibleQuest";
@@ -227,10 +254,10 @@ export default function ProfileScreen() {
                       className="mb-2"
                     />
                     <Text className="text-headline-md font-bold text-on-surface">
-                      {loggedUser?.matchesPlayed ?? loggedUser?._count?.matchesAsPlayerOne ?? 0}
+                      {totalMatches}
                     </Text>
                     <Text className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">
-                      Partidas
+                      Partidas ({totalWins} vitórias)
                     </Text>
                   </View>
                   <View className="flex-1 bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/30">
@@ -266,16 +293,16 @@ export default function ProfileScreen() {
                   </View>
                   <View className="flex-1 bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/30">
                     <MaterialIcons
-                      name="local-fire-department"
+                      name="track-changes"
                       size={24}
-                      color="#b6c4ff"
+                      color="#00236f"
                       className="mb-2"
                     />
                     <Text className="text-headline-md font-bold text-on-surface">
-                      {loggedUser?.bestStreak ?? loggedUser?.currentStreak ?? 1}
+                      {accuracyPercent}%
                     </Text>
                     <Text className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">
-                      Melhor Streak
+                      Precisão Geral
                     </Text>
                   </View>
                 </View>
@@ -287,100 +314,114 @@ export default function ProfileScreen() {
               <Text className="text-title-md font-bold text-on-surface mb-3">
                 Atividade Recente
               </Text>
-              <View className="gap-2">
-                {/* Item 1 */}
-                <View className="bg-surface-container-lowest rounded-xl p-3 shadow-sm border border-outline-variant/30 flex-row items-center gap-3">
-                  <View
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 24,
-                      flexShrink: 0,
-                    }}
-                    className="bg-primary-container/10 items-center justify-center"
+              {recentMatches.length === 0 ? (
+                <View className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-outline-variant/30 items-center">
+                  <View className="w-12 h-12 rounded-full bg-primary-container/10 items-center justify-center mb-2">
+                    <MaterialIcons name="menu-book" size={24} color="#00236f" />
+                  </View>
+                  <Text className="font-bold text-on-surface text-sm text-center">
+                    Nenhuma partida registrada ainda
+                  </Text>
+                  <Text className="text-on-surface-variant text-xs text-center mt-1 mb-3">
+                    Jogue sua primeira partida para acompanhar seu histórico de estudos e batalhas!
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => router.push("/quiz")}
+                    className="bg-primary px-5 py-2.5 rounded-full flex-row items-center gap-1.5"
                   >
-                    <MaterialIcons name="book" size={20} color="#00236f" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="font-bold text-on-surface text-sm">
-                      O Êxodo
+                    <MaterialIcons name="play-arrow" size={16} color="#ffffff" />
+                    <Text className="text-white font-bold text-xs">
+                      Jogar Primeira Partida
                     </Text>
-                    <Text className="text-on-surface-variant text-[10px] mt-0.5">
-                      Há 2 horas
-                    </Text>
-                  </View>
-                  <View className="items-end">
-                    <Text
-                      style={{
-                        color: "#4edea3",
-                        fontSize: 12,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      +45 XP
-                    </Text>
-                    <Text className="text-[10px] text-on-surface-variant mt-0.5">
-                      9/10 Acertos
-                    </Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
+              ) : (
+                <View className="gap-2">
+                  {recentMatches.map((match: any) => {
+                    const isMultiplayer = Boolean(match.playerTwo);
+                    const isPlayerOne = match.playerOne === loggedUser?.id;
+                    const opponentName = isPlayerOne
+                      ? match.user2?.name || "Oponente"
+                      : match.user1?.name || "Oponente";
+                    const isWinner = match.winner && match.winner === loggedUser?.id;
+                    const matchScore = Number(match.score) || 0;
+                    const questionCount = match._count?.questions || 10;
+                    const soloXp = matchScore;
+                    const correctCount =
+                      match.correctAnswers ?? Math.round(matchScore / 15);
 
-                {/* Item 2 */}
-                <View className="bg-surface-container-lowest rounded-xl p-3 shadow-sm border border-outline-variant/30 flex-row items-center gap-3">
-                  <View className="w-10 h-10 rounded-full bg-secondary-container/10 items-center justify-center">
-                    <MaterialIcons
-                      name="sports-esports"
-                      size={20}
-                      color="#fea619"
-                    />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="font-bold text-on-surface text-sm">
-                      Arena: Davi vs Golias
-                    </Text>
-                    <Text className="text-on-surface-variant text-[10px] mt-0.5">
-                      Ontem
-                    </Text>
-                  </View>
-                  <View className="items-end">
-                    <Text
-                      style={{
-                        color: "#855300",
-                        fontSize: 12,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Vitória
-                    </Text>
-                    <Text className="text-[10px] text-on-surface-variant mt-0.5">
-                      +120 XP
-                    </Text>
-                  </View>
+                    return (
+                      <View
+                        key={match.id}
+                        className="bg-surface-container-lowest rounded-xl p-3 shadow-sm border border-outline-variant/30 flex-row items-center gap-3"
+                      >
+                        <View
+                          style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 22,
+                            flexShrink: 0,
+                          }}
+                          className={
+                            isMultiplayer
+                              ? "bg-secondary-container/15 items-center justify-center"
+                              : "bg-primary-container/10 items-center justify-center"
+                          }
+                        >
+                          <MaterialIcons
+                            name={isMultiplayer ? "sports-esports" : "menu-book"}
+                            size={20}
+                            color={isMultiplayer ? "#fea619" : "#00236f"}
+                          />
+                        </View>
+                        <View className="flex-1">
+                          <Text className="font-bold text-on-surface text-sm">
+                            {isMultiplayer
+                              ? `Arena 1v1 vs ${opponentName}`
+                              : "Quiz Individual"}
+                          </Text>
+                          <Text className="text-on-surface-variant text-[10px] mt-0.5">
+                            {formatMatchDate(match.createdAt)}
+                          </Text>
+                        </View>
+                        <View className="items-end">
+                          {isMultiplayer ? (
+                            <>
+                              <Text
+                                style={{
+                                  color: isWinner ? "#15803d" : "#855300",
+                                  fontSize: 12,
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                {isWinner ? "Vitória" : "Derrota"}
+                              </Text>
+                              <Text className="text-[10px] text-on-surface-variant mt-0.5">
+                                {isWinner ? `+${matchScore} XP` : `${matchScore} pts`}
+                              </Text>
+                            </>
+                          ) : (
+                            <>
+                              <Text
+                                style={{
+                                  color: "#15803d",
+                                  fontSize: 12,
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                +{soloXp} XP
+                              </Text>
+                              <Text className="text-[10px] text-on-surface-variant mt-0.5">
+                                {correctCount}/{questionCount} Acertos
+                              </Text>
+                            </>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })}
                 </View>
-
-                {/* Item 3 */}
-                <View className="bg-surface-container-lowest rounded-xl p-3 shadow-sm border border-outline-variant/30 flex-row items-center gap-3">
-                  <View className="w-10 h-10 rounded-full bg-primary-container/10 items-center justify-center">
-                    <MaterialIcons name="menu-book" size={20} color="#00236f" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="font-bold text-on-surface text-sm">
-                      Parábolas de Jesus
-                    </Text>
-                    <Text className="text-on-surface-variant text-[10px] mt-0.5">
-                      2 dias atrás
-                    </Text>
-                  </View>
-                  <View className="items-end">
-                    <Text className="text-xs font-bold text-on-tertiary-container">
-                      +30 XP
-                    </Text>
-                    <Text className="text-[10px] text-on-surface-variant mt-0.5">
-                      6/10 Acertos
-                    </Text>
-                  </View>
-                </View>
-              </View>
+              )}
             </View>
 
             {/* Botões de Ação */}

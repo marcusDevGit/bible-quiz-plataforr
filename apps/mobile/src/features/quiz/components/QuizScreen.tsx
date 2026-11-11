@@ -20,9 +20,16 @@ const LETTERS = ["A", "B", "C", "D"];
 export default function QuizScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ categoryId?: string; categoryName?: string }>();
+  const params = useLocalSearchParams<{
+    categoryId?: string;
+    categoryName?: string;
+    mode?: string;
+  }>();
   const categoryId = typeof params.categoryId === "string" ? params.categoryId : undefined;
   const categoryName = typeof params.categoryName === "string" ? params.categoryName : undefined;
+  const mode = typeof params.mode === "string" ? params.mode : undefined;
+  const isSurvivalMode = mode === "survival";
+  const questionLimit = isSurvivalMode ? 20 : 10;
 
   const [startTime] = useState(() => Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -30,14 +37,24 @@ export default function QuizScreen() {
   const [score, setScore] = useState(0);
   const [answers, setAnswers] = useState<MatchAnswer[]>([]);
   const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
+  const [isShowingFeedback, setIsShowingFeedback] = useState(false);
+  const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeoutRef.current) {
+        clearTimeout(feedbackTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const {
     data: questions,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["quizQuestions", categoryId ?? "all"],
-    queryFn: () => quizService.fetchRandomQuestions(10, categoryId),
+    queryKey: ["quizQuestions", categoryId ?? "all", mode ?? "standard"],
+    queryFn: () => quizService.fetchRandomQuestions(questionLimit, categoryId),
   });
 
   const finishQuiz = useCallback(
@@ -47,44 +64,51 @@ export default function QuizScreen() {
         pathname: "/result",
         params: {
           score: finalScore,
-          total: questions?.length || 10,
+          total: isSurvivalMode
+            ? Math.max(finalAnswers.length, 1)
+            : questions?.length || 10,
           timeElapsed: finalTimeElapsed,
           answers: JSON.stringify(finalAnswers),
         },
       });
     },
-    [questions, router, startTime]
+    [isSurvivalMode, questions, router, startTime]
   );
 
   const handleTimeoutOrSkip = useCallback(() => {
-    if (!questions || !questions[currentIndex]) return;
+    if (!questions || !questions[currentIndex] || isShowingFeedback) return;
     const currentQ = questions[currentIndex];
     const correctAlt = currentQ.alternatives.find((a: any) => a.isCorrect);
     const updatedAnswers: MatchAnswer[] = [
       ...answers,
       {
-        questionId: currentQ.id, isCorrect: false,
+        questionId: currentQ.id,
+        isCorrect: false,
         questionTitle: currentQ.title,
         reference: currentQ.reference,
         explanation: currentQ.explanation,
         selectedAlternative: "Tempo esgotado / Pulou",
         correctAlternative: correctAlt?.description,
-
       },
     ];
     setAnswers(updatedAnswers);
 
+    if (isSurvivalMode) {
+      finishQuiz(score, updatedAnswers);
+      return;
+    }
+
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex((prev) => prev + 1);
       setSelectedOption(null);
-      setTimeLeft(SECONDS_PER_QUESTION)
+      setTimeLeft(SECONDS_PER_QUESTION);
     } else {
       finishQuiz(score, updatedAnswers);
     }
-  }, [answers, currentIndex, finishQuiz, questions, score])
+  }, [answers, currentIndex, finishQuiz, isShowingFeedback, isSurvivalMode, questions, score]);
 
   useEffect(() => {
-    if (isLoading || isError || !questions || questions.length === 0) return;
+    if (isLoading || isError || isShowingFeedback || !questions || questions.length === 0) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -98,11 +122,11 @@ export default function QuizScreen() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentIndex, handleTimeoutOrSkip, isError, isLoading, questions]);
+  }, [currentIndex, handleTimeoutOrSkip, isError, isLoading, isShowingFeedback, questions]);
 
   // Confirmar resposta selecionada
   const handleConfirm = () => {
-    if (selectedOption === null || !questions) return;
+    if (selectedOption === null || !questions || isShowingFeedback) return;
     const currentQ = questions[currentIndex];
     const alternatives = currentQ.alternatives || [];
     const chosenAlternative = alternatives[selectedOption];
@@ -118,7 +142,8 @@ export default function QuizScreen() {
     const updatedAnswers: MatchAnswer[] = [
       ...answers,
       {
-        questionId: currentQ.id, isCorrect,
+        questionId: currentQ.id,
+        isCorrect,
         questionTitle: currentQ.title,
         reference: currentQ.reference,
         explanation: currentQ.explanation,
@@ -127,14 +152,18 @@ export default function QuizScreen() {
       },
     ];
     setAnswers(updatedAnswers);
+    setIsShowingFeedback(true);
 
-    if (currentIndex + 1 < questions.length) {
-      setCurrentIndex((prev) => prev + 1);
-      setSelectedOption(null);
-      setTimeLeft(SECONDS_PER_QUESTION);
-    } else {
-      finishQuiz(newScore, updatedAnswers);
-    }
+    feedbackTimeoutRef.current = setTimeout(() => {
+      setIsShowingFeedback(false);
+      if ((isSurvivalMode && !isCorrect) || currentIndex + 1 >= questions.length) {
+        finishQuiz(newScore, updatedAnswers);
+      } else {
+        setCurrentIndex((prev) => prev + 1);
+        setSelectedOption(null);
+        setTimeLeft(SECONDS_PER_QUESTION);
+      }
+    }, 750);
   };
 
   // Diálogo de confirmação para sair
@@ -183,8 +212,11 @@ export default function QuizScreen() {
   const alternatives = currentQuestion.alternatives || [];
   const progressPercentage = ((currentIndex + 1) / questions.length) * 100;
   const isTimeCritical = timeLeft <= 5;
-
-
+  const headerBadgeTitle = isSurvivalMode
+    ? "Modo Sobrevivência • Morte Súbita"
+    : mode === "daily"
+      ? "Desafio Diário"
+      : categoryName || currentQuestion.category?.name || "Quiz Bíblico";
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f7f9fb" }}>
@@ -200,6 +232,50 @@ export default function QuizScreen() {
           }}
           className="px-5 pb-3 z-10"
         >
+          {/* Título/Badge do Modo ou Categoria */}
+          <View className="flex-row items-center justify-center mb-1.5">
+            <View
+              style={{
+                backgroundColor: isSurvivalMode
+                  ? "#fef2f2"
+                  : mode === "daily"
+                    ? "#ffeed4"
+                    : "#e8edff",
+              }}
+              className="flex-row items-center gap-1.5 px-3 py-1 rounded-full"
+            >
+              <MaterialIcons
+                name={
+                  isSurvivalMode
+                    ? "shield"
+                    : mode === "daily"
+                      ? "local-fire-department"
+                      : "menu-book"
+                }
+                size={13}
+                color={
+                  isSurvivalMode
+                    ? "#ba1a1a"
+                    : mode === "daily"
+                      ? "#855300"
+                      : "#00236f"
+                }
+              />
+              <Text
+                style={{
+                  color: isSurvivalMode
+                    ? "#ba1a1a"
+                    : mode === "daily"
+                      ? "#855300"
+                      : "#00236f",
+                }}
+                className="font-bold text-[11px] uppercase tracking-wider"
+              >
+                {headerBadgeTitle}
+              </Text>
+            </View>
+          </View>
+
           <View className="flex-row items-center justify-between h-14">
             {/* Botão Fechar com Confirmação */}
             <TouchableOpacity
@@ -310,14 +386,40 @@ export default function QuizScreen() {
               {alternatives.map((alt, index) => {
                 const isSelected = selectedOption === index;
                 const letter = LETTERS[index] || `${index + 1}`;
+                const showCorrect = isShowingFeedback && !!alt.isCorrect;
+                const showWrong = isShowingFeedback && isSelected && !alt.isCorrect;
+
+                const borderColor = showCorrect
+                  ? "#16a34a"
+                  : showWrong
+                    ? "#ba1a1a"
+                    : isSelected
+                      ? "#00236f"
+                      : "#e0e3eb";
+                const backgroundColor = showCorrect
+                  ? "#f0fdf4"
+                  : showWrong
+                    ? "#fef2f2"
+                    : isSelected
+                      ? "#eef2ff"
+                      : "#ffffff";
+                const badgeBg = showCorrect
+                  ? "#16a34a"
+                  : showWrong
+                    ? "#ba1a1a"
+                    : isSelected
+                      ? "#00236f"
+                      : "#f0f2f5";
+
                 return (
                   <TouchableOpacity
                     key={index}
                     activeOpacity={0.8}
+                    disabled={isShowingFeedback}
                     onPress={() => setSelectedOption(index)}
                     style={{
-                      borderColor: isSelected ? "#00236f" : "#e0e3eb",
-                      backgroundColor: isSelected ? "#eef2ff" : "#ffffff",
+                      borderColor,
+                      backgroundColor,
                       borderWidth: 2,
                     }}
                     className="w-full flex-row items-center justify-between p-4 rounded-2xl"
@@ -325,13 +427,16 @@ export default function QuizScreen() {
                     {/* Badge da Letra (A, B, C, D) */}
                     <View
                       style={{
-                        backgroundColor: isSelected ? "#00236f" : "#f0f2f5",
+                        backgroundColor: badgeBg,
                       }}
                       className="w-9 h-9 rounded-xl items-center justify-center mr-3"
                     >
                       <Text
                         style={{
-                          color: isSelected ? "#ffffff" : "#444651",
+                          color:
+                            isSelected || showCorrect || showWrong
+                              ? "#ffffff"
+                              : "#444651",
                         }}
                         className="font-bold text-sm"
                       >
@@ -341,8 +446,15 @@ export default function QuizScreen() {
                     {/* Descrição da Opção */}
                     <Text
                       style={{
-                        color: isSelected ? "#00236f" : "#1c1b1f",
-                        fontWeight: isSelected ? "600" : "500",
+                        color: showCorrect
+                          ? "#15803d"
+                          : showWrong
+                            ? "#ba1a1a"
+                            : isSelected
+                              ? "#00236f"
+                              : "#1c1b1f",
+                        fontWeight:
+                          isSelected || showCorrect || showWrong ? "600" : "500",
                       }}
                       className="text-base flex-1"
                     >
@@ -351,10 +463,24 @@ export default function QuizScreen() {
                     {/* Indicador de Seleção */}
                     <MaterialIcons
                       name={
-                        isSelected ? "check-circle" : "radio-button-unchecked"
+                        showCorrect
+                          ? "check-circle"
+                          : showWrong
+                            ? "cancel"
+                            : isSelected
+                              ? "check-circle"
+                              : "radio-button-unchecked"
                       }
                       size={24}
-                      color={isSelected ? "#00236f" : "#c5c5d3"}
+                      color={
+                        showCorrect
+                          ? "#16a34a"
+                          : showWrong
+                            ? "#ba1a1a"
+                            : isSelected
+                              ? "#00236f"
+                              : "#c5c5d3"
+                      }
                     />
                   </TouchableOpacity>
                 );
@@ -382,19 +508,23 @@ export default function QuizScreen() {
             }}
             className="flex-1 py-4 px-2 rounded-2xl items-center justify-center"
             onPress={handleTimeoutOrSkip}
+            disabled={isShowingFeedback}
             activeOpacity={0.7}
           >
             <Text className="text-on-surface-variant font-bold text-sm">
-              Pular
+              {isSurvivalMode ? "Desistir" : "Pular"}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={{
-              backgroundColor: selectedOption !== null ? "#00236f" : "#8ea4d2",
+              backgroundColor:
+                selectedOption !== null && !isShowingFeedback
+                  ? "#00236f"
+                  : "#8ea4d2",
             }}
             className="flex-[2] py-4 px-6 rounded-2xl items-center justify-center flex-row gap-2"
             onPress={handleConfirm}
-            disabled={selectedOption === null}
+            disabled={selectedOption === null || isShowingFeedback}
             activeOpacity={0.8}
           >
             <Text className="text-white font-bold text-sm">Confirmar</Text>

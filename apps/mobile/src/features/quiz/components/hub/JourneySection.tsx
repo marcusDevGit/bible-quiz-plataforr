@@ -15,7 +15,15 @@ export function JourneySection() {
                         Jornada pelas Escrituras
                     </Text>
                 </View>
-                <TouchableOpacity onPress={() => router.push("/quiz")} className="flex-row items-center">
+                <TouchableOpacity
+                    onPress={() =>
+                        router.push({
+                            pathname: "/quiz",
+                            params: { mode: "journey", categoryName: "Jornada pelas Escrituras" },
+                        })
+                    }
+                    className="flex-row items-center"
+                >
                     <Text style={{ color: "#00236f", fontSize: 12, fontWeight: "600" }}>Ver Trilha</Text>
                     <MaterialIcons name="chevron-right" size={16} color="#00236f" />
                 </TouchableOpacity>
@@ -61,7 +69,16 @@ export function JourneySection() {
                             <View style={{ height: "100%", width: "40%", backgroundColor: "#00236f", borderRadius: 3 }} />
                         </View>
                     </View>
-                    <TouchableOpacity onPress={() => router.push("/quiz")} activeOpacity={0.8} style={{ backgroundColor: "#f2f4f6", paddingVertical: 10, borderRadius: 12, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 6 }}>
+                    <TouchableOpacity
+                        onPress={() =>
+                            router.push({
+                                pathname: "/quiz",
+                                params: { mode: "journey", categoryName: "Evangelho de Mateus" },
+                            })
+                        }
+                        activeOpacity={0.8}
+                        style={{ backgroundColor: "#f2f4f6", paddingVertical: 10, borderRadius: 12, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 6 }}
+                    >
                         <MaterialIcons name="play-arrow" size={18} color="#00236f" />
                         <Text style={{ color: "#00236f", fontWeight: "bold", fontSize: 13 }}>Continuar Nível 5</Text>
                     </TouchableOpacity>
@@ -90,7 +107,16 @@ export function JourneySection() {
                             <View style={{ height: "100%", width: "80%", backgroundColor: "#fea619", borderRadius: 3 }} />
                         </View>
                     </View>
-                    <TouchableOpacity onPress={() => router.push("/quiz")} activeOpacity={0.8} style={{ backgroundColor: "#ffddb8", paddingVertical: 10, borderRadius: 12, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 6 }}>
+                    <TouchableOpacity
+                        onPress={() =>
+                            router.push({
+                                pathname: "/quiz",
+                                params: { mode: "journey", categoryName: "Gênesis: Origens" },
+                            })
+                        }
+                        activeOpacity={0.8}
+                        style={{ backgroundColor: "#ffddb8", paddingVertical: 10, borderRadius: 12, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 6 }}
+                    >
                         <MaterialIcons name="play-arrow" size={18} color="#653e00" />
                         <Text style={{ color: "#653e00", fontWeight: "bold", fontSize: 13 }}>Continuar Nível 9</Text>
                     </TouchableOpacity>

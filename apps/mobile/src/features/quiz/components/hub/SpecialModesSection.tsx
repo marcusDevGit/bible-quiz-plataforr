@@ -18,7 +18,12 @@ export function SpecialModesSection() {
             <View className="gap-3">
                 {/* Modo Sobrevivência */}
                 <TouchableOpacity
-                    onPress={() => router.push("/quiz")}
+                    onPress={() =>
+                        router.push({
+                            pathname: "/quiz",
+                            params: { mode: "survival", categoryName: "Modo Sobrevivência" },
+                        })
+                    }
                     activeOpacity={0.85}
                     style={{
                         backgroundColor: "#00236f",

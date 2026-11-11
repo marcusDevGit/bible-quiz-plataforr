@@ -82,7 +82,12 @@ export function DailyChallengeCard() {
                 </View>
 
                 <TouchableOpacity
-                    onPress={() => router.push("/quiz")}
+                    onPress={() =>
+                        router.push({
+                            pathname: "/quiz",
+                            params: { mode: "daily", categoryName: "Desafio Diário" },
+                        })
+                    }
                     activeOpacity={0.85}
                     style={{
                         backgroundColor: "#fea619",
