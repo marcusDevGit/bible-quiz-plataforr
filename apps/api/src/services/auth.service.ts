@@ -10,6 +10,25 @@ import { JWT_SECRET } from "../config/env";
 const userRepository = new UserRepository();
 const streakService = new StreakService();
 
+const IMAGE_DATA_URL_REGEX =
+  /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/i;
+
+export function isSafeAvatarValue(avatar: string): boolean {
+  const trimmed = avatar.trim();
+  if (!trimmed) return false;
+
+  if (IMAGE_DATA_URL_REGEX.test(trimmed)) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export class AuthService {
   async register(data: RegisterInput) {
     const userExists = await userRepository.findByEmail(data.email);
@@ -161,15 +180,29 @@ export class AuthService {
 
   async updateProfile(
     userId: string,
-    data: { name?: string; password?: string; avatar?: string },
+    data: { name?: string; password?: string; avatar?: string | null },
   ) {
-    const updateData: { name?: string; password?: string; avatar?: string } =
-      {};
+    const updateData: {
+      name?: string;
+      password?: string;
+      avatar?: string | null;
+    } = {};
     if (data.name !== undefined) {
       updateData.name = data.name;
     }
     if (data.avatar !== undefined) {
-      updateData.avatar = data.avatar;
+      if (data.avatar === null || data.avatar.trim() === "") {
+        updateData.avatar = null;
+      } else {
+        const trimmedAvatar = data.avatar.trim();
+        if (!isSafeAvatarValue(trimmedAvatar)) {
+          throw new AppError(
+            "Avatar inválido. Use uma URL http(s) válida ou imagem base64 (PNG, JPEG, WEBP, GIF).",
+            400,
+          );
+        }
+        updateData.avatar = trimmedAvatar;
+      }
     }
     if (data.password !== undefined && data.password !== "") {
       updateData.password = await bcrypt.hash(data.password, 10);

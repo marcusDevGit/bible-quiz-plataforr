@@ -48,7 +48,7 @@ export class UserRepository {
 
   async update(
     id: string,
-    data: { name?: string; password?: string; avatar?: string },
+    data: { name?: string; password?: string; avatar?: string | null },
   ) {
     return prisma.user.update({
       where: { id },
@@ -59,6 +59,8 @@ export class UserRepository {
         email: true,
         avatar: true,
         role: true,
+        currentStreak: true,
+        bestStreak: true,
         createdAt: true,
       },
     });

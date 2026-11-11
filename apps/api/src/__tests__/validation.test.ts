@@ -6,6 +6,7 @@ import {
   updateProfileSchema,
   submitMatchSchema,
 } from "@bible-quiz/shared-validation";
+import { isSafeAvatarValue } from "../services/auth.service";
 
 describe("Schemas de Validação Compartilhados", () => {
   it("loginSchema deve aceitar credenciais válidas e rejeitar e-mail/senha inválidos", () => {
@@ -84,5 +85,26 @@ describe("Schemas de Validação Compartilhados", () => {
       ],
     });
     assert.equal(invalidUuid.success, false);
+  });
+
+  it("isSafeAvatarValue deve aceitar URLs http(s) e Data URLs de imagem e rejeitar esquemas inseguros", () => {
+    assert.equal(isSafeAvatarValue("https://example.com/avatar.png"), true);
+    assert.equal(isSafeAvatarValue("http://localhost:3001/foto.jpg"), true);
+    assert.equal(
+      isSafeAvatarValue("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD="),
+      true,
+    );
+    assert.equal(
+      isSafeAvatarValue("data:image/png;base64,iVBORw0KGgo="),
+      true,
+    );
+
+    assert.equal(
+      isSafeAvatarValue("data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="),
+      false,
+    );
+    assert.equal(isSafeAvatarValue("javascript:alert(1)"), false);
+    assert.equal(isSafeAvatarValue(""), false);
+    assert.equal(isSafeAvatarValue("not-a-valid-url"), false);
   });
 });

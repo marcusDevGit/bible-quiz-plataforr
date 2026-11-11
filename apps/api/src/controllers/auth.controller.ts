@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { AuthService } from "../services/auth.service";
+import { AuthService, isSafeAvatarValue } from "../services/auth.service";
 import { registerSchema, loginSchema } from "@bible-quiz/shared-validation";
 
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 
+export { isSafeAvatarValue };
 const authService = new AuthService();
 
 const updateProfileSchema = z.object({
@@ -65,7 +66,8 @@ export class AuthController {
       const user = await authService.updateProfile(userId, {
         name: validatedData.name,
         password: validatedData.password,
-        avatar: validatedData.avatar ?? undefined,
+        avatar:
+          validatedData.avatar === "" ? null : validatedData.avatar,
       });
       return res.status(200).json({
         message: "Perfil atualizado com sucesso",
