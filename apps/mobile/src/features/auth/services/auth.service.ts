@@ -48,4 +48,15 @@ export const authService = {
   async getProfile(): Promise<{ user: any }> {
     return apiFetch<{ user: any }>("/users/me");
   },
+
+  async updateProfile(data: {
+    name?: string;
+    avatar?: string | null;
+    password?: string;
+  }): Promise<{ message: string; user: any }> {
+    return apiFetch<{ message: string; user: any }>("/users/profile", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
 };

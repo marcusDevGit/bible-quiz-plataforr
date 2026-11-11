@@ -1,4 +1,7 @@
 import { io, Socket } from "socket.io-client";
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
+import { TOKEN_KEY } from "./api";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -9,6 +12,17 @@ export const socket: Socket = io(API_BASE_URL, {
   transports: ["websocket"],
   reconnectionAttempts: 5,
   reconnectionDelay: 2000,
+  auth: async (cb) => {
+    try {
+      const token =
+        Platform.OS === "web"
+          ? localStorage.getItem(TOKEN_KEY)
+          : await SecureStore.getItemAsync(TOKEN_KEY);
+      cb({ token: token ?? undefined });
+    } catch {
+      cb({});
+    }
+  },
 });
 
 socket.on("connect", () => {

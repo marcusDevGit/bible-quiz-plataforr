@@ -28,6 +28,8 @@ export default function ArenaRoute() {
   const [isSearchingMatch, setIsSearchingMatch] = useState(false);
   const [searchStatusMsg, setSearchStatusMsg] = useState("Procurando oponente...");
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  const [onlineCount, setOnlineCount] = useState<number>(1);
+  const [activeRoomsCount, setActiveRoomsCount] = useState<number>(0);
 
   // Busca dados do usuário logado para enviar ao socket
   const { data: profileData, isLoading: loadingProfile } = useQuery({
@@ -41,6 +43,24 @@ export default function ArenaRoute() {
     if (!socket.connected) {
       socket.connect();
     }
+
+    socket.emit("get_arena_stats");
+
+    socket.on(
+      "arena_stats",
+      (stats: { onlineCount?: number; activeRooms?: number; queueCount?: number }) => {
+        if (typeof stats?.onlineCount === "number") {
+          setOnlineCount(Math.max(1, stats.onlineCount));
+        }
+        if (typeof stats?.activeRooms === "number") {
+          setActiveRoomsCount(stats.activeRooms);
+        }
+      },
+    );
+
+    socket.on("connect", () => {
+      socket.emit("get_arena_stats");
+    });
 
     socket.on("room_created", (room: any) => {
       setConnecting(false);
@@ -78,6 +98,7 @@ export default function ArenaRoute() {
     });
 
     return () => {
+      socket.off("arena_stats");
       socket.off("room_created");
       socket.off("room_updated");
       socket.off("quick_match_found")
@@ -154,7 +175,10 @@ export default function ArenaRoute() {
             >
               <View className="w-2.5 h-2.5 rounded-full bg-on-tertiary-container animate-pulse" />
               <Text className="text-on-tertiary-container font-semibold text-xs">
-                1.240 jogadores online agora
+                {onlineCount === 1
+                  ? "1 jogador online na Arena agora"
+                  : `${onlineCount.toLocaleString("pt-BR")} jogadores online agora`}
+                {activeRoomsCount > 0 ? ` • ${activeRoomsCount} salas ativas` : ""}
               </Text>
             </View>
           </View>

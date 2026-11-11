@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, Modal, TouchableOpacity, ScrollView } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
+import { categoryService } from "@/features/categories/services/category.service";
 
 interface CreateRoomModalProps {
     visible: boolean;
@@ -8,8 +10,8 @@ interface CreateRoomModalProps {
     onConfirm: (theme: string) => void;
 }
 
-// Lista de temas bíblicos cadastrados
-const THEMES = [
+// Lista de temas bíblicos cadastrados (fallback padrão)
+const FALLBACK_THEMES = [
     { id: "Geral (Aleatório)", label: "Geral (Aleatório)", icon: "shuffle", desc: "Perguntas de toda a Bíblia" },
     { id: "Pentateuco", label: "Pentateuco", icon: "menu-book", desc: "De Gênesis a Deuteronômio" },
     { id: "Patriarcas", label: "Patriarcas", icon: "groups", desc: "Abraão, Isaque, Jacó e José" },
@@ -17,8 +19,41 @@ const THEMES = [
     { id: "Novo Testamento", label: "Novo Testamento", icon: "church", desc: "Cartas, Atos e Apocalipse" },
 ];
 
+const CATEGORY_ICONS: string[] = [
+    "menu-book",
+    "auto-stories",
+    "groups",
+    "church",
+    "auto-awesome",
+    "history-edu",
+];
+
 export function CreateRoomModal({ visible, onClose, onConfirm }: CreateRoomModalProps) {
     const [selectedTheme, setSelectedTheme] = useState("Geral (Aleatório)");
+
+    const { data: apiCategories = [] } = useQuery({
+        queryKey: ["categories"],
+        queryFn: () => categoryService.getCategories(),
+        enabled: visible,
+    });
+
+    const themes =
+        apiCategories.length > 0
+            ? [
+                  {
+                      id: "Geral (Aleatório)",
+                      label: "Geral (Aleatório)",
+                      icon: "shuffle",
+                      desc: "Perguntas de toda a Bíblia",
+                  },
+                  ...apiCategories.map((cat, idx) => ({
+                      id: cat.name,
+                      label: cat.name,
+                      icon: CATEGORY_ICONS[idx % CATEGORY_ICONS.length],
+                      desc: `${cat._count?.questions ?? 10} perguntas disponíveis`,
+                  })),
+              ]
+            : FALLBACK_THEMES;
 
     const handleCreate = () => {
         onConfirm(selectedTheme);
@@ -47,7 +82,7 @@ export function CreateRoomModal({ visible, onClose, onConfirm }: CreateRoomModal
                     {/* Lista de Temas */}
                     <ScrollView className="max-h-80" showsVerticalScrollIndicator={false}>
                         <View className="flex-col gap-2.5 my-2">
-                            {THEMES.map((theme) => {
+                            {themes.map((theme) => {
                                 const isSelected = selectedTheme === theme.id;
                                 return (
                                     <TouchableOpacity
