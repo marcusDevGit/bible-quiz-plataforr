@@ -43,6 +43,8 @@ export default function RankingScreen() {
   });
   const loggedUser = profileData?.user;
   const loggedUserRank = ranking?.find((p) => p.id === loggedUser?.id);
+  const userPoints = loggedUser?.points ?? loggedUserRank?.points ?? 0;
+  const currentLevel = loggedUser?.level ?? Math.floor(userPoints / 200) + 1;
 
 
   const rank1 = ranking.find((p) => p.position === 1) || null;
@@ -215,7 +217,7 @@ export default function RankingScreen() {
             }}
           >
             <Text style={{ color: "#684000", fontSize: 9, fontWeight: "bold" }}>
-              Lvl 7
+              Lvl {currentLevel}
             </Text>
           </View>
         </View>
@@ -242,7 +244,7 @@ export default function RankingScreen() {
         >
           <Text style={{ fontSize: 12 }}>🔥</Text>
           <Text style={{ color: "#00236f", fontSize: 12, fontWeight: "bold" }}>
-            7 Dias
+            {loggedUser?.currentStreak || 1} Dias
           </Text>
         </View>
       </View>

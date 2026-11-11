@@ -16,7 +16,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as SecureStore from "expo-secure-store";
 import { authService } from "@/features/auth/services/auth.service";
 import BrandLogo from "~/src/components/common/BrandLogo";
-import { platform } from "node:os";
 
 export default function LoginScreen() {
   const router = useRouter();

@@ -232,7 +232,7 @@ export default function RegisterScreem() {
             <Text className="text-xs text-on-surface ml-2 flex-1 leading-4">
               Li e concordo com os{" "}
               <Text className="text-primary font-bold underline">Termos de Serviço</Text> e{" "}
-              <Text className="text-primary font-bold underline">Privacidade de Privacidade</Text>.
+              <Text className="text-primary font-bold underline">Política de Privacidade</Text>.
             </Text>
           </TouchableOpacity>
           <TouchableOpacity

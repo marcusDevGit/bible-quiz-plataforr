@@ -32,12 +32,22 @@ export interface MatchAnswer {
 }
 
 export const quizService = {
-  async fetchRandomQuestions(limit: number = 10): Promise<QuestionResponse[]> {
-    const response = await apiFetch<PaginatedQuestions>("/questions?limit=50");
+  async fetchRandomQuestions(
+    limit: number = 10,
+    categoryId?: string,
+  ): Promise<QuestionResponse[]> {
+    const query = categoryId
+      ? `/questions?limit=50&categoryId=${encodeURIComponent(categoryId)}`
+      : "/questions?limit=50";
+    const response = await apiFetch<PaginatedQuestions>(query);
 
     const allQuestions = response.data || [];
+    const filteredQuestions = categoryId
+      ? allQuestions.filter((q) => q.categoryId === categoryId)
+      : allQuestions;
+    const pool = filteredQuestions.length > 0 ? filteredQuestions : allQuestions;
 
-    const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
+    const shuffled = [...pool].sort(() => 0.5 - Math.random());
 
     return shuffled.slice(0, limit);
   },

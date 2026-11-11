@@ -6,7 +6,7 @@ Aplicativo mobile da plataforma BibleQuest, construído com React Native, Expo, 
 
 ## 🎨 Decisões de Design e UI/UX
 
-O aplicativo segue o design system **Sacred Wisdom** (definido em `bible-quest-Design/sacred_wisdom/DESIGN.md`), focando em uma experiência mobile premium e gamificada:
+O aplicativo segue o design system **Sacred Wisdom**, focando em uma experiência mobile premium e gamificada:
 - **Cores Harmoniosas:** Azul Escuro (`#00236f`) como cor primária de confiança, Ouro (`#fea619`) como container secundário para elementos de recompensa e conquistas, e Emerald Green (`#4edea3`) para XP.
 - **Tipografia:** Fonte *Inter* com tamanhos escalonados para melhor contraste e legibilidade em dispositivos móveis.
 - **Simulador Web Resiliente:** Adaptado com limites rígidos de contêiner e centralização (`max-w-md mx-auto`) para simular perfeitamente um dispositivo mobile no navegador.
@@ -29,7 +29,7 @@ O aplicativo segue o design system **Sacred Wisdom** (definido em `bible-quest-D
 Crie um arquivo `.env` no diretório `apps/mobile/` apontando para a sua API local ou de produção:
 
 ```env
-EXPO_PUBLIC_API_URL="http://localhost:3000"
+EXPO_PUBLIC_API_URL="http://localhost:3001"
 ```
 
 ### 2. Iniciar o Servidor de Desenvolvimento do Expo

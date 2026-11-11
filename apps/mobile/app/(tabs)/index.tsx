@@ -174,7 +174,7 @@ export default function DashboardScreen() {
           }}
           className="flex-row items-center gap-1 ">
           <Text style={{ fontSize: 12 }}>🔥</Text>
-          <Text style={{ color: "#00236f", fontSize: 12, fontWeight: "bold" }}>7 Dias</Text>
+          <Text style={{ color: "#00236f", fontSize: 12, fontWeight: "bold" }}>{loggedUser?.currentStreak || 1} Dias</Text>
         </View>
       </View>
 
@@ -544,7 +544,15 @@ export default function DashboardScreen() {
                 return (
                   <TouchableOpacity
                     key={cat.id || index}
-                    onPress={() => router.push("/quiz")}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/quiz",
+                        params: {
+                          categoryId: cat.id,
+                          categoryName: cat.name,
+                        },
+                      })
+                    }
                     activeOpacity={0.8}
                     style={{
                       width: 170,

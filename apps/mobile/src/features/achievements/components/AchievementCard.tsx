@@ -14,7 +14,7 @@ export function AchievementCard({ item, onPress }: AchievementCardProps) {
     const style = RARITY_STYLES[item.rarity] ?? RARITY_STYLES.COMMON;
     const iconName = ICON_MAP[item.code] ?? "military-tech";
     const displayName = item.name || item.title || "Conquista";
-    const progressVal = item.progress ?? 0;
+    const progressVal = Math.min(100, Math.max(0, item.progress ?? 0));
 
     return (
         <TouchableOpacity
@@ -147,7 +147,7 @@ export function AchievementCard({ item, onPress }: AchievementCardProps) {
                 </Text>
             ) : (
                 <View style={{ width: "100%", marginTop: 8 }}>
-                    <View className="flex-row justify-between mb-1">
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
                         <Text style={{ fontSize: 9, color: "#757682" }}>{progressVal === 0 ? "Não iniciada" : "Progresso"}</Text>
                         <Text style={{ fontSize: 9, color: "#757682", fontWeight: "bold" }}>
                             {progressVal}%

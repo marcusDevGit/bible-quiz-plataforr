@@ -10,7 +10,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { quizService, MatchAnswer } from "@/features/quiz/services/quiz.service";
 import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -20,6 +20,9 @@ const LETTERS = ["A", "B", "C", "D"];
 export default function QuizScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ categoryId?: string; categoryName?: string }>();
+  const categoryId = typeof params.categoryId === "string" ? params.categoryId : undefined;
+  const categoryName = typeof params.categoryName === "string" ? params.categoryName : undefined;
 
   const [startTime] = useState(() => Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -33,8 +36,8 @@ export default function QuizScreen() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["quizQuestions"],
-    queryFn: () => quizService.fetchRandomQuestions(10),
+    queryKey: ["quizQuestions", categoryId ?? "all"],
+    queryFn: () => quizService.fetchRandomQuestions(10, categoryId),
   });
 
   const finishQuiz = useCallback(
@@ -273,14 +276,14 @@ export default function QuizScreen() {
           <View className="w-full max-w-2xl mx-auto">
             {/* Badges de Metadados: Categoria e Referência */}
             <View className="flex-row items-center justify-center gap-2 mb-4">
-              {currentQuestion.category && (
+              {(currentQuestion.category?.name || categoryName) && (
                 <View
                   style={{ backgroundColor: "#e8edff" }}
                   className="flex-row items-center gap-1 px-3 py-1 rounded-full"
                 >
                   <MaterialIcons name="local-offer" size={12} color="#00236f" />
                   <Text className="text-primary font-bold text-xs uppercase tracking-wider">
-                    {currentQuestion.category.name}
+                    {currentQuestion.category?.name || categoryName}
                   </Text>
                 </View>
               )}

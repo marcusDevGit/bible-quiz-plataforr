@@ -87,13 +87,6 @@ export default function TabsLayout() {
           ),
         }}
       />
-      {/* Rota oculta da tab bar — acessível via router.push('/achievements') */}
-      <Tabs.Screen
-        name="achievements"
-        options={{
-          href: null, // Remove da tab bar sem remover a rota
-        }}
-      />
     </Tabs>
   );
 }

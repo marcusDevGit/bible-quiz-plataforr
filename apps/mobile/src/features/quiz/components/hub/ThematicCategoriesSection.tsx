@@ -27,7 +27,15 @@ export function ThematicCategoriesSection({ categories }: Props) {
                 {categories.map((cat) => (
                     <TouchableOpacity
                         key={cat.id}
-                        onPress={() => router.push("/quiz")}
+                        onPress={() =>
+                            router.push({
+                                pathname: "/quiz",
+                                params: {
+                                    categoryId: cat.id,
+                                    categoryName: cat.name,
+                                },
+                            })
+                        }
                         activeOpacity={0.85}
                         style={{
                             backgroundColor: "#ffffff",

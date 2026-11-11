@@ -1,18 +1,35 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Alert, Modal } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Alert, Modal, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import * as SecureStore from "expo-secure-store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQueryClient } from "@tanstack/react-query";
 import { quizService, MatchAnswer } from "../services/quiz.service";
 
 const BEST_TIME_KEY = "quiz_best_time_seconds";
+
+async function getStoredBestTime(): Promise<string | null> {
+  if (Platform.OS === "web") {
+    return localStorage.getItem(BEST_TIME_KEY);
+  }
+  return SecureStore.getItemAsync(BEST_TIME_KEY);
+}
+
+async function setStoredBestTime(value: string): Promise<void> {
+  if (Platform.OS === "web") {
+    localStorage.setItem(BEST_TIME_KEY, value);
+    return;
+  }
+  await SecureStore.setItemAsync(BEST_TIME_KEY, value);
+}
 
 
 export default function ResultScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
   // Capturamos as variáveis que a tela de Quiz mandou
   const { score, total, timeElapsed, answers } = useLocalSearchParams();
@@ -52,23 +69,29 @@ export default function ResultScreen() {
       try {
         const response = await quizService.submitMatch(numScore, parsedAnswers);
         console.log("✓ Partida salva no backend:", response);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["currentUserProfile"] }),
+          queryClient.invalidateQueries({ queryKey: ["profile"] }),
+          queryClient.invalidateQueries({ queryKey: ["ranking"] }),
+          queryClient.invalidateQueries({ queryKey: ["myAchievements"] }),
+        ]);
       } catch (error) {
         console.error("❌ Erro ao salvar partida no backend:", error);
       }
     }
     saveMatch();
-  }, [numScore, parsedAnswers]);
+  }, [numScore, parsedAnswers, queryClient]);
 
   useEffect(() => {
     async function evaluateRecord() {
       if (numTimeElapsed <= 0) return;
       try {
-        const saved = await SecureStore.getItemAsync(BEST_TIME_KEY);
+        const saved = await getStoredBestTime();
         const prevBest = saved ? Number(saved) : null;
         setBestTime(prevBest);
 
         if (prevBest === null || numTimeElapsed < prevBest) {
-          await SecureStore.setItemAsync(BEST_TIME_KEY, String(numTimeElapsed));
+          await setStoredBestTime(String(numTimeElapsed));
           setIsNewRecord(true);
           setBestTime(numTimeElapsed);
         }
@@ -282,6 +305,7 @@ export default function ResultScreen() {
 
         <View className="w-full flex-col gap-3 mt-2">
           <TouchableOpacity
+            style={{ backgroundColor: "#fea619" }}
             className="w-full py-4 rounded-full flex-row items-center justify-center gap-2"
             onPress={() => router.replace("/quiz")}
             activeOpacity={0.8}

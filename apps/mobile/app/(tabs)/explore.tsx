@@ -31,7 +31,7 @@ export default function ExploreQuizRoute() {
   });
   const loggedUserRank = ranking.find((p) => p.id === loggedUser?.id);
 
-  const { refetch: refetchCategories, isRefetching: isRefetchingCategories } = useQuery({
+  const { data: apiCategories = [], refetch: refetchCategories, isRefetching: isRefetchingCategories } = useQuery({
     queryKey: ["categories"],
     queryFn: () => categoryService.getCategories(),
   });
@@ -46,7 +46,20 @@ export default function ExploreQuizRoute() {
     refetchCategories();
   };
 
-  const filteredCategories = STITCH_CATEGORIES.filter((cat) => {
+  const mergedCategories = STITCH_CATEGORIES.map((stitchCat) => {
+    const matchedApiCat = apiCategories.find(
+      (apiCat) => apiCat.name.toLowerCase() === stitchCat.name.toLowerCase(),
+    );
+    return matchedApiCat
+      ? {
+          ...stitchCat,
+          id: matchedApiCat.id,
+          questionsCount: matchedApiCat._count?.questions ?? stitchCat.questionsCount,
+        }
+      : stitchCat;
+  });
+
+  const filteredCategories = mergedCategories.filter((cat) => {
     const matchesSearch =
       searchQuery.trim() === "" ||
       cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -82,7 +95,7 @@ export default function ExploreQuizRoute() {
 
         <View style={{ backgroundColor: "#f2f4f6", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 16, borderWidth: 1, borderColor: "#e6e8ea" }} className="flex-row items-center gap-1">
           <Text style={{ fontSize: 12 }}>🔥</Text>
-          <Text style={{ color: "#00236f", fontSize: 12, fontWeight: "bold" }}>7 Dias</Text>
+          <Text style={{ color: "#00236f", fontSize: 12, fontWeight: "bold" }}>{loggedUser?.currentStreak || 1} Dias</Text>
         </View>
       </View>
 

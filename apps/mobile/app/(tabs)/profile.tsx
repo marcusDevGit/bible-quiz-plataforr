@@ -8,12 +8,37 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { authService } from "@/features/auth/services/auth.service";
+import { rankingService } from "@/features/ranking/services/ranking.service";
 import { useRouter } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
 
 const TOPBAR_HEIGHT = 64;
 const TABBAR_HEIGHT = 65;
 
 export default function ProfileScreen() {
+  const { data: profileData } = useQuery({
+    queryKey: ["currentUserProfile"],
+    queryFn: () => authService.getProfile(),
+  });
+
+  const { data: ranking = [] } = useQuery({
+    queryKey: ["ranking"],
+    queryFn: () => rankingService.getGlobalRanking(),
+  });
+
+  const loggedUser = profileData?.user;
+  const loggedUserRank = ranking.find((p) => p.id === loggedUser?.id);
+
+  const userPoints = loggedUser?.points ?? loggedUserRank?.points ?? 0;
+  const XP_PER_LEVEL = 200;
+  const currentLevel = loggedUser?.level ?? Math.floor(userPoints / XP_PER_LEVEL) + 1;
+  const currentXPInLevel = userPoints % XP_PER_LEVEL;
+  const progressPercent = Math.min(100, Math.round((currentXPInLevel / XP_PER_LEVEL) * 100));
+
+  const formattedMemberSince = loggedUser?.createdAt
+    ? `Membro desde ${new Date(loggedUser.createdAt).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}`
+    : loggedUser?.email ?? "Membro BibleQuest";
+
   const router = useRouter();
   const { height } = useWindowDimensions();
   const scrollAreaHeight = height - TOPBAR_HEIGHT - TABBAR_HEIGHT;
@@ -36,7 +61,7 @@ export default function ProfileScreen() {
         </Text>
         <View className="flex-row items-center gap-1 bg-secondary-container/10 px-3 py-1.5 rounded-full">
           <Text className="text-sm">🔥</Text>
-          <Text className="text-primary font-bold text-sm">7 Dias</Text>
+          <Text className="text-primary font-bold text-sm"> {loggedUser?.currentStreak || 1} Dias</Text>
         </View>
       </View>
 
@@ -51,13 +76,27 @@ export default function ProfileScreen() {
             {/* Cabeçalho do Perfil & Barra de XP */}
             <View className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-outline-variant/30 items-center">
               <View style={{ width: 96, height: 96 }} className="relative mb-3">
-                <Image
-                  source={{
-                    uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAEGLQo6ZGyAB6dkDz0B9emPJ8_ZMmgGzQzAZAQR66vTEjRBDFQf4X5CnCU6YF6tJmay0AOVBCKs0OIgxzqktF73Rg2lrolxiXFR8CqGIEfn9gqmWfDkxsH1OvHocCR1x3TCJI9BCbMdWYuHjxQCPdOX3rJSXWzfx6TzA4KrHjUcQpXVFUbd43LA0i8qg6HAhVFM-e-m3KxatDTU62jjHV3mv-UuVH31-Z1GJkGj2S8GN9zYddgCI5gdh2e9mZamipdBAburOM8aoSQ",
-                  }}
-                  style={{ width: 96, height: 96, borderRadius: 48 }}
-                  className="border-4 border-surface-container-lowest shadow-sm"
-                />
+                {loggedUser?.avatar ? (
+                  <Image
+                    source={{ uri: loggedUser.avatar }}
+                    style={{ width: 96, height: 96, borderRadius: 48 }}
+                    className="border-4 border-surface-container-lowest shadow-sm"
+                  />
+                ) : (
+                  <View
+                    style={{
+                      width: 96,
+                      height: 96,
+                      borderRadius: 48,
+                      backgroundColor: "#eceef0",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    className="border-4 border-surface-container-lowest shadow-sm"
+                  >
+                    <MaterialIcons name="person" size={48} color="#00236f" />
+                  </View>
+                )}
                 <View
                   style={{
                     position: "absolute",
@@ -74,29 +113,32 @@ export default function ProfileScreen() {
                   }}
                 >
                   <Text className="text-on-secondary-container text-xs font-bold">
-                    12
+                    {currentLevel}
                   </Text>
                 </View>
               </View>
 
               <Text className="text-headline-md font-bold text-on-surface mb-1">
-                João Silva
+                {loggedUser?.name || "Jogador"}
               </Text>
               <Text className="text-body-md text-on-surface-variant mb-4">
-                Membro desde Jan 2023
+                {formattedMemberSince}
               </Text>
 
               {/* Barra de Progresso de XP */}
               <View className="w-full bg-surface-container-high rounded-full h-3 mb-2 overflow-hidden">
-                <View className="bg-primary h-full rounded-full w-[65%]" />
+                <View
+                  style={{ width: `${progressPercent}%` }}
+                  className="bg-primary h-full rounded-full"
+                />
               </View>
 
               <View className="w-full flex-row justify-between">
                 <Text className="text-xs font-medium text-on-surface-variant">
-                  Nível 12
+                  Nível {currentLevel}
                 </Text>
                 <Text className="text-xs font-medium text-on-surface-variant">
-                  650 / 1000 XP
+                  {currentXPInLevel} / {XP_PER_LEVEL} XP
                 </Text>
               </View>
             </View>
@@ -117,7 +159,7 @@ export default function ProfileScreen() {
                       className="mb-2"
                     />
                     <Text className="text-headline-md font-bold text-on-surface">
-                      142
+                      {loggedUser?.matchesPlayed ?? loggedUser?._count?.matchesAsPlayerOne ?? 0}
                     </Text>
                     <Text className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">
                       Partidas
@@ -131,10 +173,10 @@ export default function ProfileScreen() {
                       className="mb-2"
                     />
                     <Text className="text-headline-md font-bold text-on-surface">
-                      88
+                      {userPoints}
                     </Text>
                     <Text className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">
-                      Vitórias
+                      XP Total
                     </Text>
                   </View>
                 </View>
@@ -142,16 +184,16 @@ export default function ProfileScreen() {
                 <View className="flex-row gap-4">
                   <View className="flex-1 bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/30">
                     <MaterialIcons
-                      name="my-location"
+                      name="leaderboard"
                       size={24}
                       color="#4edea3"
                       className="mb-2"
                     />
                     <Text className="text-headline-md font-bold text-on-surface">
-                      78%
+                      {loggedUserRank ? `#${loggedUserRank.position}` : "-"}
                     </Text>
                     <Text className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">
-                      Precisão
+                      Posição Global
                     </Text>
                   </View>
                   <View className="flex-1 bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/30">
@@ -162,7 +204,7 @@ export default function ProfileScreen() {
                       className="mb-2"
                     />
                     <Text className="text-headline-md font-bold text-on-surface">
-                      12
+                      {loggedUser?.bestStreak ?? loggedUser?.currentStreak ?? 1}
                     </Text>
                     <Text className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">
                       Melhor Streak
