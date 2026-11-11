@@ -41,8 +41,28 @@ export const questionSchema = z.object({
     ),
 });
 
+export const updateProfileSchema = z.object({
+  name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres").optional(),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres").optional(),
+  avatar: z.string().nullable().optional(),
+});
+
+export const matchAnswerSchema = z.object({
+  questionId: z.string().uuid("ID da pergunta inválido"),
+  selectedAlternativeId: z.string().optional(),
+  isCorrect: z.boolean(),
+});
+
+export const submitMatchSchema = z.object({
+  score: z.number().int().nonnegative("A pontuação deve ser maior ou igual a zero"),
+  answers: z.array(matchAnswerSchema).optional(),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type AlternativeInput = z.infer<typeof alternativeSchema>;
 export type QuestionInput = z.infer<typeof questionSchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type MatchAnswerInput = z.infer<typeof matchAnswerSchema>;
+export type SubmitMatchInput = z.infer<typeof submitMatchSchema>;
