@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   Image,
-  useWindowDimensions,
   Modal,
   TextInput,
   ActivityIndicator,
   Alert,
+  RefreshControl,
+  Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { authService } from "@/features/auth/services/auth.service";
 import { rankingService } from "@/features/ranking/services/ranking.service";
@@ -18,7 +20,6 @@ import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const TOPBAR_HEIGHT = 64;
-const TABBAR_HEIGHT = 65;
 
 export default function ProfileScreen() {
   const queryClient = useQueryClient();
@@ -28,23 +29,48 @@ export default function ProfileScreen() {
   const [editAvatar, setEditAvatar] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editError, setEditError] = useState("");
+  const [profileSuccessMsg, setProfileSuccessMsg] = useState("");
+  const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [dailyReminders, setDailyReminders] = useState(true);
   const [soundEffects, setSoundEffects] = useState(true);
 
-  const { data: profileData } = useQuery({
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const {
+    data: profileData,
+    refetch: refetchProfile,
+    isRefetching: isRefetchingProfile,
+  } = useQuery({
     queryKey: ["currentUserProfile"],
     queryFn: () => authService.getProfile(),
   });
 
-  const { data: ranking = [] } = useQuery({
+  const {
+    data: ranking = [],
+    refetch: refetchRanking,
+    isRefetching: isRefetchingRanking,
+  } = useQuery({
     queryKey: ["ranking"],
     queryFn: () => rankingService.getGlobalRanking(),
   });
 
+  const isRefreshing = isRefetchingProfile || isRefetchingRanking;
+  const handleRefresh = () => {
+    refetchProfile();
+    refetchRanking();
+  };
+
   const loggedUser = profileData?.user;
   const loggedUserRank = ranking.find((p) => p.id === loggedUser?.id);
 
-  const userPoints = loggedUser?.points ?? loggedUserRank?.points ?? 0;
+  const userPoints =
+    loggedUser?.stats?.points ?? loggedUser?.points ?? loggedUserRank?.points ?? 0;
   const XP_PER_LEVEL = 200;
   const currentLevel = loggedUser?.level ?? Math.floor(userPoints / XP_PER_LEVEL) + 1;
   const currentXPInLevel = userPoints % XP_PER_LEVEL;
@@ -82,8 +108,6 @@ export default function ProfileScreen() {
     : loggedUser?.email ?? "Membro BibleQuest";
 
   const router = useRouter();
-  const { height } = useWindowDimensions();
-  const scrollAreaHeight = height - TOPBAR_HEIGHT - TABBAR_HEIGHT;
 
   useEffect(() => {
     if (loggedUser && isEditModalVisible) {
@@ -107,7 +131,16 @@ export default function ProfileScreen() {
         queryClient.invalidateQueries({ queryKey: ["ranking"] }),
       ]);
       setIsEditModalVisible(false);
-      Alert.alert("Sucesso", "Seu perfil foi atualizado com sucesso!");
+      setProfileSuccessMsg("Seu perfil foi atualizado com sucesso!");
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+      successTimeoutRef.current = setTimeout(() => {
+        setProfileSuccessMsg("");
+      }, 4000);
+      if (Platform.OS !== "web") {
+        Alert.alert("Sucesso", "Seu perfil foi atualizado com sucesso!");
+      }
     },
     onError: (err: any) => {
       setEditError(err?.message || "Erro ao atualizar perfil.");
@@ -140,12 +173,12 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     setIsSettingsModalVisible(false);
     await authService.logout();
+    queryClient.clear();
     router.replace("/login");
   };
 
   return (
-    // SafeAreaView com limitação de container para centralizar no browser
-    <View style={{ flex: 1, backgroundColor: "#f7f9fb" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#f7f9fb" }}>
       {/* TopAppBar - Conforme Protótipo */}
       <View
         style={{ height: TOPBAR_HEIGHT }}
@@ -161,13 +194,36 @@ export default function ProfileScreen() {
       </View>
 
       {/* Área de Rolagem do Conteúdo */}
-      <View style={{ flex: 1, minHeight: scrollAreaHeight }}>
+      <View style={{ flex: 1 }}>
         <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={["#00236f"]}
+              tintColor="#00236f"
+            />
+          }
         >
           <View className="px-5 gap-6">
+            {profileSuccessMsg ? (
+              <View
+                style={{
+                  backgroundColor: "#f0fdf4",
+                  borderColor: "#86efac",
+                  borderWidth: 1,
+                }}
+                className="rounded-xl p-3 flex-row items-center gap-2"
+              >
+                <MaterialIcons name="check-circle" size={18} color="#16a34a" />
+                <Text style={{ color: "#15803d" }} className="text-xs font-bold flex-1">
+                  {profileSuccessMsg}
+                </Text>
+              </View>
+            ) : null}
             {/* Cabeçalho do Perfil & Barra de XP */}
             <View className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-outline-variant/30 items-center">
               <View style={{ width: 96, height: 96 }} className="relative mb-3">
@@ -696,6 +752,6 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }

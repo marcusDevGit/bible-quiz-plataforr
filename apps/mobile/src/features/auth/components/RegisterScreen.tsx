@@ -12,10 +12,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { authService } from "@/features/auth/services/auth.service";
 
 export default function RegisterScreem() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,6 +53,7 @@ export default function RegisterScreem() {
     try {
       setLoading(true);
       await authService.register({ name, email, password });
+      queryClient.clear();
       router.replace("/(tabs)");
     } catch (err: any) {
       setErrorMsg(err.message || "Erro ao criar conta. Tente novamente.");

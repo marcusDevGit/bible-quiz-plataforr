@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as SecureStore from "expo-secure-store";
@@ -19,6 +19,7 @@ import BrandLogo from "~/src/components/common/BrandLogo";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -71,6 +72,7 @@ export default function LoginScreen() {
         console.warn("Erro ao atualizar credencial", e);
       }
 
+      queryClient.clear();
       router.replace("/(tabs)");
     },
     onError: (error: any) => {
