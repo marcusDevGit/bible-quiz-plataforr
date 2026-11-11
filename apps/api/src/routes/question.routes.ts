@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { QuestionController } from "../controllers/question.controller";
-import { authMiddleware } from "../middlewares/auth.middleware";
+import { authMiddleware, requireAdmin } from "../middlewares/auth.middleware";
 
 const questionRouter = Router();
 const questionController = new QuestionController();
@@ -11,11 +11,27 @@ questionRouter.get(
   authMiddleware,
   questionController.getById,
 );
-questionRouter.post("/questions", authMiddleware, questionController.create);
-questionRouter.put("/questions/:id", authMiddleware, questionController.update);
+questionRouter.post(
+  "/questions/:id/check",
+  authMiddleware,
+  questionController.checkAnswer,
+);
+questionRouter.post(
+  "/questions",
+  authMiddleware,
+  requireAdmin,
+  questionController.create,
+);
+questionRouter.put(
+  "/questions/:id",
+  authMiddleware,
+  requireAdmin,
+  questionController.update,
+);
 questionRouter.delete(
   "/questions/:id",
   authMiddleware,
+  requireAdmin,
   questionController.delete,
 );
 

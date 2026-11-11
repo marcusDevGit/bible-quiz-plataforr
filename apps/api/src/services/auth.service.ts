@@ -5,10 +5,10 @@ import { AppError } from "../error/app-error";
 import { LoginInput, RegisterInput } from "@bible-quiz/shared-validation";
 import { StreakService } from "./streak.service";
 import { prisma } from "../prisma/client";
+import { JWT_SECRET } from "../config/env";
 
 const userRepository = new UserRepository();
 const streakService = new StreakService();
-const JWT_SECRET = process.env.JWT_SECRET || "secret_Bible_DeveLop_amb";
 
 export class AuthService {
   async register(data: RegisterInput) {
@@ -27,6 +27,7 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
       createdAt: user.createdAt,
     };
   }
@@ -42,7 +43,11 @@ export class AuthService {
       throw new AppError("Credenciais invalidas", 401);
     }
 
-    const token = jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign(
+      { sub: user.id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" },
+    );
 
     const streak = await streakService.updateUserStreak(user.id);
 
@@ -52,6 +57,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         avatar: user.avatar,
+        role: user.role,
         currentStreak: streak.currentStreak,
         bestStreak: streak.bestStreak,
       },
@@ -235,6 +241,7 @@ export class AuthService {
         name: true,
         email: true,
         avatar: true,
+        role: true,
         currentStreak: true,
         bestStreak: true,
         createdAt: true,
@@ -265,6 +272,7 @@ export class AuthService {
         name: u.name,
         email: u.email,
         avatar: u.avatar,
+        role: u.role,
         currentStreak: u.currentStreak,
         bestStreak: u.bestStreak,
         createdAt: u.createdAt,

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller";
-import { authMiddleware } from "../middlewares/auth.middleware";
+import { authMiddleware, requireAdmin } from "../middlewares/auth.middleware";
 
 const authRouter = Router();
 const authController = new AuthController();
@@ -20,7 +20,12 @@ authRouter.post("/auth/forgot-password", async (req, res) => {
 
 
 authRouter.get("/users/me", authMiddleware, authController.me);
-authRouter.get("/users/admin-stats", authMiddleware, authController.getAdminStats);
-authRouter.get("/users", authMiddleware, authController.listUsers);
+authRouter.get(
+  "/users/admin-stats",
+  authMiddleware,
+  requireAdmin,
+  authController.getAdminStats,
+);
+authRouter.get("/users", authMiddleware, requireAdmin, authController.listUsers);
 
 export { authRouter };

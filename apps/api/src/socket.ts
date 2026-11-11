@@ -2,8 +2,7 @@ import { Server as HttpServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import { registerMultiplayerHandlers } from "./sockets/multiplayer.handler";
-
-const JWT_SECRET = process.env.JWT_SECRET || "secret_Bible_DeveLop_amb";
+import { JWT_SECRET } from "./config/env";
 
 let io: Server | null = null;
 

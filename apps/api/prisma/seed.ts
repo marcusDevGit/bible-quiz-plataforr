@@ -344,6 +344,16 @@ async function main() {
     });
   }
 
+  if (process.env.ADMIN_EMAIL) {
+    const promoted = await prisma.user.updateMany({
+      where: { email: process.env.ADMIN_EMAIL },
+      data: { role: "ADMIN" },
+    });
+    console.log(
+      `👑 ADMIN_EMAIL (${process.env.ADMIN_EMAIL}): ${promoted.count} usuário(s) promovido(s) a ADMIN.`,
+    );
+  }
+
   console.log("🌱 Seed concluído com sucesso!");
 }
 

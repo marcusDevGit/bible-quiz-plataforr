@@ -1,8 +1,13 @@
 import { Request, Response, NextFunction } from "express";
+import { z } from "zod";
 import { QuestionService } from "../services/question.service";
 import { questionSchema } from "@bible-quiz/shared-validation";
 
 const questionService = new QuestionService();
+
+const checkAnswerSchema = z.object({
+  alternativeId: z.string().nullable().optional(),
+});
 
 export class QuestionController {
   list = async (req: Request, res: Response, next: NextFunction) => {
@@ -16,7 +21,8 @@ export class QuestionController {
         limit: limit ? parseInt(limit as string, 10) : undefined,
       };
 
-      const result = await questionService.list(filters);
+      const isAdmin = req.user?.role === "ADMIN";
+      const result = await questionService.list(filters, isAdmin);
       return res.status(200).json(result);
     } catch (error) {
       next(error);
@@ -25,8 +31,20 @@ export class QuestionController {
   getById = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const question = await questionService.getById(id);
+      const isAdmin = req.user?.role === "ADMIN";
+      const question = await questionService.getById(id, isAdmin);
       return res.status(200).json(question);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  checkAnswer = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { alternativeId } = checkAnswerSchema.parse(req.body ?? {});
+      const result = await questionService.checkAnswer(id, alternativeId);
+      return res.status(200).json(result);
     } catch (error) {
       next(error);
     }
