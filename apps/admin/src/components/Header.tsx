@@ -1,13 +1,52 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "../service/api";
 
 interface HeaderProps {
   onSettingsClick: () => void;
   onLogoutClick: () => void;
 }
-export function Header({ onSettingsClick, onLogoutClick }: HeaderProps) {
+
+interface StoredAdminUser {
+  name?: string;
+  role?: string;
+  avatar?: string | null;
+}
+
+function readStoredAdminUser(): StoredAdminUser {
   const userJson = localStorage.getItem("admin_user");
-  const user = userJson ? JSON.parse(userJson) : { name: "Administrador" };
+  if (!userJson) return { name: "Administrador" };
+  try {
+    return JSON.parse(userJson) as StoredAdminUser;
+  } catch {
+    return { name: "Administrador" };
+  }
+}
+
+export function Header({ onSettingsClick, onLogoutClick }: HeaderProps) {
+  const [storedUser, setStoredUser] = useState<StoredAdminUser>(readStoredAdminUser);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const { data: meData } = useQuery<{ user: StoredAdminUser }>({
+    queryKey: ["admin-me"],
+    queryFn: () => apiFetch<{ user: StoredAdminUser }>("/users/me"),
+    retry: 1,
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    const syncFromStorage = () => setStoredUser(readStoredAdminUser());
+    window.addEventListener("admin-user-updated", syncFromStorage);
+    window.addEventListener("storage", syncFromStorage);
+    return () => {
+      window.removeEventListener("admin-user-updated", syncFromStorage);
+      window.removeEventListener("storage", syncFromStorage);
+    };
+  }, []);
+
+  const user = meData?.user ?? storedUser;
+  const displayName = user.name || "Administrador";
+  const displayInitial = displayName.charAt(0).toUpperCase();
   return (
     <header className="h-16 bg-surface border-b border-outline-variant flex items-center justify-between px-8 shrink-0 relative">
       {/* Search */}
@@ -35,15 +74,23 @@ export function Header({ onSettingsClick, onLogoutClick }: HeaderProps) {
           >
             <div className="text-right hidden md:block">
               <div className="font-label-lg text-label-lg text-on-surface font-semibold">
-                {user.name}
+                {displayName}
               </div>
               <div className="font-label-sm text-label-sm text-on-surface-variant">
                 {user.role}
               </div>
             </div>
-            <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-title-md font-bold border border-outline-variant">
-              {user.name.charAt(0).toUpperCase()}
-            </div>
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                alt={displayName}
+                className="w-10 h-10 rounded-full object-cover border border-outline-variant"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-title-md font-bold border border-outline-variant">
+                {displayInitial}
+              </div>
+            )}
           </div>
           {/* Dropdown Menu */}
           {isDropdownOpen && (
