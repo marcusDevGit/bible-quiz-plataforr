@@ -3,6 +3,7 @@ import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import { registerMultiplayerHandlers } from "./sockets/multiplayer.handler";
 import { JWT_SECRET } from "./config/env";
+import { logger } from "./observability/logger";
 
 let io: Server | null = null;
 
@@ -24,21 +25,28 @@ export function initSocket(server: HttpServer): Server {
           id?: string;
         };
         socket.data.userId = decoded.id || decoded.sub;
-      } catch (err) {
-        console.warn(`⚠️ Token JWT inválido no socket (${socket.id})`);
+      } catch {
+        logger.warn("socket_invalid_token", { socketId: socket.id });
       }
     }
     next();
   });
 
   io.on("connection", (socket) => {
-    console.log(`⚡ Jogador conectado: ${socket.id}`);
+    logger.info("socket_connected", {
+      socketId: socket.id,
+      userId: socket.data.userId,
+    });
 
     // Registra os handlers de eventos do multiplayer
     registerMultiplayerHandlers(io!, socket);
 
-    socket.on("disconnect", () => {
-      console.log(`🔌 Jogador desconectado: ${socket.id}`);
+    socket.on("disconnect", (reason) => {
+      logger.info("socket_disconnected", {
+        socketId: socket.id,
+        userId: socket.data.userId,
+        reason,
+      });
     });
   });
 
