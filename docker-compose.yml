@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-biblequiz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-biblequiz_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-biblequiz}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-biblequiz} -d ${POSTGRES_DB:-biblequiz}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-biblequiz}:${POSTGRES_PASSWORD:-biblequiz_dev_only}@postgres:5432/${POSTGRES_DB:-biblequiz}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-dev_only_change_this_jwt_secret}
+    ports:
+      - "3001:3001"
+    command: ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        VITE_BASE_URL: ${VITE_BASE_URL:-http://localhost:3001}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "5173:80"
+
+volumes:
+  postgres_data:
+

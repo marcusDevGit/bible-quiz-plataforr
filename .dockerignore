@@ -1,0 +1,12 @@
+.git
+.gitignore
+.turbo
+**/node_modules
+**/dist
+.env
+.env.*
+!.env.docker.example
+apps/mobile/**
+!apps/mobile/package.json
+*.log
+
