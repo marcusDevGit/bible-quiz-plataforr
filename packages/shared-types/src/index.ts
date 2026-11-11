@@ -1,5 +1,7 @@
 export type Difficulty = "EASY" | "MEDIUM" | "HARD";
 
+export type UserRole = "USER" | "ADMIN";
+
 export type Rarity =
   | "COMMON"
   | "UNCOMMON"
@@ -12,6 +14,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  role?: UserRole;
   avatar?: string | null;
   currentStreak?: number;
   bestStreak?: number;
@@ -51,9 +54,18 @@ export interface Alternative {
   id: string;
   questionId: string;
   description: string;
-  isCorrect: boolean;
+  isCorrect?: boolean;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+}
+
+export interface CheckAnswerResponse {
+  questionId: string;
+  isCorrect: boolean;
+  correctAlternativeId: string | null;
+  correctAlternative: string | null;
+  explanation: string | null;
+  reference: string | null;
 }
 
 export interface Match {
