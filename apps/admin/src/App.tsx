@@ -3,12 +3,24 @@ import { Header } from "./components/Header";
 import { Outlet, Navigate, useNavigate } from "react-router-dom";
 import { logout } from "./service/auth.service";
 
+function isAuthorizedAdminSession(): boolean {
+  const token = localStorage.getItem("admin_token");
+  const rawUser = localStorage.getItem("admin_user");
+  if (!token || !rawUser) return false;
+
+  try {
+    const user = JSON.parse(rawUser) as { role?: string };
+    return user?.role === "ADMIN";
+  } catch {
+    return false;
+  }
+}
+
 function App() {
   const navigate = useNavigate();
 
-  const token = localStorage.getItem("admin_token");
-
-  if (!token) {
+  if (!isAuthorizedAdminSession()) {
+    logout();
     return <Navigate to="/login" replace />;
   }
 

@@ -19,6 +19,13 @@ export async function apiFetch<T>(
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem("admin_token");
+      localStorage.removeItem("admin_user");
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+    }
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || "Erro na requisição à API");
   }

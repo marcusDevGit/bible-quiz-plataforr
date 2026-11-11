@@ -14,6 +14,11 @@ export function Login() {
   const mutation = useMutation({
     mutationFn: login,
     onSuccess: (data) => {
+      if (data.user?.role !== "ADMIN") {
+        toast.error("Acesso restrito a administradores.");
+        return;
+      }
+
       localStorage.setItem("admin_token", data.token);
       localStorage.setItem("admin_user", JSON.stringify(data.user));
 
