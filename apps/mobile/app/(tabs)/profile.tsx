@@ -13,6 +13,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
 import { MaterialIcons } from "@expo/vector-icons";
 import { authService } from "@/features/auth/services/auth.service";
 import { rankingService } from "@/features/ranking/services/ranking.service";
@@ -20,6 +21,60 @@ import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const TOPBAR_HEIGHT = 64;
+const MAX_AVATAR_DIMENSION = 400;
+
+async function readBlobAsDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Não foi possível ler a imagem."));
+      }
+    };
+    reader.onerror = () => reject(new Error("Erro ao ler arquivo de imagem."));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function optimizeWebImageToDataUrl(uri: string, file?: File): Promise<string> {
+  try {
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const img = document.createElement("img");
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const scale = Math.min(
+          1,
+          MAX_AVATAR_DIMENSION / Math.max(img.naturalWidth || 1, img.naturalHeight || 1),
+        );
+        const width = Math.max(1, Math.round((img.naturalWidth || MAX_AVATAR_DIMENSION) * scale));
+        const height = Math.max(1, Math.round((img.naturalHeight || MAX_AVATAR_DIMENSION) * scale));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Canvas indisponível"));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.onerror = () => reject(new Error("Falha ao carregar imagem para redimensionamento"));
+      img.src = uri;
+    });
+    return dataUrl;
+  } catch {
+    if (file) {
+      return readBlobAsDataUrl(file);
+    }
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    return readBlobAsDataUrl(blob);
+  }
+}
 
 export default function ProfileScreen() {
   const queryClient = useQueryClient();
@@ -29,6 +84,7 @@ export default function ProfileScreen() {
   const [editAvatar, setEditAvatar] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editError, setEditError] = useState("");
+  const [isPickingImage, setIsPickingImage] = useState(false);
   const [profileSuccessMsg, setProfileSuccessMsg] = useState("");
   const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [dailyReminders, setDailyReminders] = useState(true);
@@ -147,6 +203,57 @@ export default function ProfileScreen() {
     },
   });
 
+  const handlePickImage = async () => {
+    setEditError("");
+    setIsPickingImage(true);
+    try {
+      if (Platform.OS !== "web") {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          setEditError(
+            "Permissão para acessar a galeria é necessária para escolher uma foto.",
+          );
+          return;
+        }
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.55,
+        base64: true,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      if (Platform.OS === "web") {
+        const optimized = await optimizeWebImageToDataUrl(asset.uri, asset.file);
+        setEditAvatar(optimized);
+        return;
+      }
+
+      if (asset.base64) {
+        const rawMime = asset.mimeType || "image/jpeg";
+        const mime = /^image\/(png|jpe?g|webp|gif)$/i.test(rawMime)
+          ? rawMime
+          : "image/jpeg";
+        setEditAvatar(`data:${mime};base64,${asset.base64}`);
+      } else if (asset.uri?.startsWith("data:image/")) {
+        setEditAvatar(asset.uri);
+      } else {
+        setEditError("Não foi possível processar a imagem selecionada.");
+      }
+    } catch (err: any) {
+      setEditError(err?.message || "Erro ao selecionar imagem do dispositivo.");
+    } finally {
+      setIsPickingImage(false);
+    }
+  };
+
   const handleSaveProfile = () => {
     setEditError("");
     const trimmedName = editName.trim();
@@ -226,7 +333,13 @@ export default function ProfileScreen() {
             ) : null}
             {/* Cabeçalho do Perfil & Barra de XP */}
             <View className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-outline-variant/30 items-center">
-              <View style={{ width: 96, height: 96 }} className="relative mb-3">
+              <TouchableOpacity
+                onPress={() => setIsEditModalVisible(true)}
+                activeOpacity={0.8}
+                accessibilityLabel="Editar foto e perfil"
+                style={{ width: 96, height: 96 }}
+                className="relative mb-3"
+              >
                 {loggedUser?.avatar ? (
                   <Image
                     source={{ uri: loggedUser.avatar }}
@@ -252,6 +365,23 @@ export default function ProfileScreen() {
                   style={{
                     position: "absolute",
                     bottom: 0,
+                    left: 0,
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    borderWidth: 2,
+                    borderColor: "#ffffff",
+                    backgroundColor: "#00236f",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <MaterialIcons name="photo-camera" size={14} color="#ffffff" />
+                </View>
+                <View
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
                     right: 0,
                     width: 32,
                     height: 32,
@@ -267,7 +397,7 @@ export default function ProfileScreen() {
                     {currentLevel}
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
 
               <Text className="text-headline-md font-bold text-on-surface mb-1">
                 {loggedUser?.name || "Jogador"}
@@ -359,6 +489,37 @@ export default function ProfileScreen() {
                     </Text>
                     <Text className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">
                       Precisão Geral
+                    </Text>
+                  </View>
+                </View>
+                {/* Linha 3 */}
+                <View className="flex-row gap-4">
+                  <View className="flex-1 bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/30">
+                    <MaterialIcons
+                      name="local-fire-department"
+                      size={24}
+                      color="#fea619"
+                      className="mb-2"
+                    />
+                    <Text className="text-headline-md font-bold text-on-surface">
+                      {loggedUser?.currentStreak ?? 0} Dias
+                    </Text>
+                    <Text className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">
+                      Ofensiva Atual
+                    </Text>
+                  </View>
+                  <View className="flex-1 bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/30">
+                    <MaterialIcons
+                      name="military-tech"
+                      size={24}
+                      color="#00236f"
+                      className="mb-2"
+                    />
+                    <Text className="text-headline-md font-bold text-on-surface">
+                      {loggedUser?.bestStreak ?? 0} Dias
+                    </Text>
+                    <Text className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">
+                      Melhor Streak
                     </Text>
                   </View>
                 </View>
@@ -545,6 +706,7 @@ export default function ProfileScreen() {
               borderTopRightRadius: 28,
               padding: 24,
               maxWidth: 540,
+              maxHeight: "90%",
               width: "100%",
               alignSelf: "center",
             }}
@@ -561,85 +723,182 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
 
-            <View className="gap-4">
-              <View>
-                <Text className="text-xs font-bold text-on-surface mb-1.5">
-                  Nome de Exibição
-                </Text>
-                <TextInput
-                  value={editName}
-                  onChangeText={setEditName}
-                  placeholder="Seu nome"
-                  placeholderTextColor="#757682"
-                  className="bg-surface-container-low border border-outline-variant/40 rounded-xl px-4 py-3 text-on-surface text-sm"
-                />
-              </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View className="gap-4">
+                {/* Preview e Seleção de Foto */}
+                <View className="items-center">
+                  <TouchableOpacity
+                    onPress={handlePickImage}
+                    disabled={isPickingImage || updateProfileMutation.isPending}
+                    activeOpacity={0.8}
+                    style={{ width: 88, height: 88 }}
+                    className="relative mb-3"
+                  >
+                    {editAvatar.trim() ? (
+                      <Image
+                        source={{ uri: editAvatar.trim() }}
+                        style={{ width: 88, height: 88, borderRadius: 44 }}
+                        className="border-2 border-primary/20"
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          width: 88,
+                          height: 88,
+                          borderRadius: 44,
+                          backgroundColor: "#eceef0",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <MaterialIcons name="person" size={44} color="#00236f" />
+                      </View>
+                    )}
+                    <View
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        right: 0,
+                        width: 28,
+                        height: 28,
+                        borderRadius: 14,
+                        borderWidth: 2,
+                        borderColor: "#ffffff",
+                        backgroundColor: "#00236f",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MaterialIcons name="photo-camera" size={14} color="#ffffff" />
+                    </View>
+                  </TouchableOpacity>
 
-              <View>
-                <Text className="text-xs font-bold text-on-surface mb-1.5">
-                  URL do Avatar (opcional)
-                </Text>
-                <TextInput
-                  value={editAvatar}
-                  onChangeText={setEditAvatar}
-                  placeholder="https://exemplo.com/sua-foto.jpg"
-                  placeholderTextColor="#757682"
-                  autoCapitalize="none"
-                  className="bg-surface-container-low border border-outline-variant/40 rounded-xl px-4 py-3 text-on-surface text-sm"
-                />
-              </View>
+                  <View className="flex-row flex-wrap items-center justify-center gap-2">
+                    <TouchableOpacity
+                      onPress={handlePickImage}
+                      disabled={isPickingImage || updateProfileMutation.isPending}
+                      className="flex-row items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary-fixed/50 border border-primary/20"
+                    >
+                      {isPickingImage ? (
+                        <ActivityIndicator size="small" color="#00236f" />
+                      ) : (
+                        <MaterialIcons name="photo-library" size={16} color="#00236f" />
+                      )}
+                      <Text className="text-primary font-bold text-xs">
+                        Escolher foto do dispositivo
+                      </Text>
+                    </TouchableOpacity>
 
-              <View>
-                <Text className="text-xs font-bold text-on-surface mb-1.5">
-                  Nova Senha (deixe em branco para manter)
-                </Text>
-                <TextInput
-                  value={editPassword}
-                  onChangeText={setEditPassword}
-                  placeholder="Mínimo de 6 caracteres"
-                  placeholderTextColor="#757682"
-                  secureTextEntry
-                  className="bg-surface-container-low border border-outline-variant/40 rounded-xl px-4 py-3 text-on-surface text-sm"
-                />
-              </View>
-
-              {editError ? (
-                <View className="bg-error-container/40 p-2.5 rounded-lg flex-row items-center">
-                  <MaterialIcons
-                    name="error-outline"
-                    size={18}
-                    color="#ba1a1a"
-                  />
-                  <Text className="text-error text-xs font-medium ml-2 flex-1">
-                    {editError}
-                  </Text>
+                    {editAvatar.trim() ? (
+                      <TouchableOpacity
+                        onPress={() => setEditAvatar("")}
+                        disabled={isPickingImage || updateProfileMutation.isPending}
+                        className="flex-row items-center gap-1 px-3 py-2 rounded-xl bg-error-container/30 border border-error/20"
+                      >
+                        <MaterialIcons name="delete-outline" size={16} color="#ba1a1a" />
+                        <Text className="text-error font-bold text-xs">
+                          Remover foto
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
                 </View>
-              ) : null}
 
-              <View className="flex-row gap-3 mt-2">
-                <TouchableOpacity
-                  onPress={() => setIsEditModalVisible(false)}
-                  disabled={updateProfileMutation.isPending}
-                  className="flex-1 py-3.5 rounded-xl border border-outline-variant items-center justify-center"
-                >
-                  <Text className="text-on-surface-variant font-bold text-sm">
-                    Cancelar
+                <View>
+                  <Text className="text-xs font-bold text-on-surface mb-1.5">
+                    Nome de Exibição
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleSaveProfile}
-                  disabled={updateProfileMutation.isPending}
-                  className="flex-1 py-3.5 rounded-xl bg-primary flex-row items-center justify-center gap-2"
-                >
-                  {updateProfileMutation.isPending ? (
-                    <ActivityIndicator size="small" color="#ffffff" />
-                  ) : null}
-                  <Text className="text-white font-bold text-sm">
-                    Salvar Alterações
+                  <TextInput
+                    value={editName}
+                    onChangeText={setEditName}
+                    placeholder="Seu nome"
+                    placeholderTextColor="#757682"
+                    className="bg-surface-container-low border border-outline-variant/40 rounded-xl px-4 py-3 text-on-surface text-sm"
+                  />
+                </View>
+
+                <View>
+                  <Text className="text-xs font-bold text-on-surface mb-1.5">
+                    URL do Avatar (opcional)
                   </Text>
-                </TouchableOpacity>
+                  {editAvatar.trim().startsWith("data:image/") ? (
+                    <View className="bg-surface-container-low border border-primary/25 rounded-xl px-4 py-3 flex-row items-center justify-between gap-2">
+                      <View className="flex-row items-center gap-2 flex-1">
+                        <MaterialIcons name="check-circle" size={18} color="#16a34a" />
+                        <Text className="text-on-surface text-xs font-semibold flex-1">
+                          Foto selecionada do dispositivo
+                        </Text>
+                      </View>
+                      <TouchableOpacity onPress={() => setEditAvatar("")}>
+                        <Text className="text-primary font-bold text-xs">
+                          Usar URL
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TextInput
+                      value={editAvatar}
+                      onChangeText={setEditAvatar}
+                      placeholder="https://exemplo.com/sua-foto.jpg"
+                      placeholderTextColor="#757682"
+                      autoCapitalize="none"
+                      className="bg-surface-container-low border border-outline-variant/40 rounded-xl px-4 py-3 text-on-surface text-sm"
+                    />
+                  )}
+                </View>
+
+                <View>
+                  <Text className="text-xs font-bold text-on-surface mb-1.5">
+                    Nova Senha (deixe em branco para manter)
+                  </Text>
+                  <TextInput
+                    value={editPassword}
+                    onChangeText={setEditPassword}
+                    placeholder="Mínimo de 6 caracteres"
+                    placeholderTextColor="#757682"
+                    secureTextEntry
+                    className="bg-surface-container-low border border-outline-variant/40 rounded-xl px-4 py-3 text-on-surface text-sm"
+                  />
+                </View>
+
+                {editError ? (
+                  <View className="bg-error-container/40 p-2.5 rounded-lg flex-row items-center">
+                    <MaterialIcons
+                      name="error-outline"
+                      size={18}
+                      color="#ba1a1a"
+                    />
+                    <Text className="text-error text-xs font-medium ml-2 flex-1">
+                      {editError}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <View className="flex-row gap-3 mt-2">
+                  <TouchableOpacity
+                    onPress={() => setIsEditModalVisible(false)}
+                    disabled={updateProfileMutation.isPending}
+                    className="flex-1 py-3.5 rounded-xl border border-outline-variant items-center justify-center"
+                  >
+                    <Text className="text-on-surface-variant font-bold text-sm">
+                      Cancelar
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSaveProfile}
+                    disabled={updateProfileMutation.isPending}
+                    className="flex-1 py-3.5 rounded-xl bg-primary flex-row items-center justify-center gap-2"
+                  >
+                    {updateProfileMutation.isPending ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : null}
+                    <Text className="text-white font-bold text-sm">
+                      Salvar Alterações
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
