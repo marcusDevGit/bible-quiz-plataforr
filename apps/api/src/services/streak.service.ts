@@ -17,16 +17,17 @@ export class StreakService {
     const todayStr = now.toISOString().slice(0, 10); // "YYYY-MM-DD"
 
     if (!user.lastActiveDate) {
+      const initialBest = Math.max(1, user.bestStreak);
       const updated = await tx.user.update({
         where: { id: userId },
         data: {
           currentStreak: 1,
-          bestStreak: Math.max(1, user.bestStreak),
+          bestStreak: initialBest,
           lastActiveDate: now,
         },
         select: { currentStreak: true, bestStreak: true },
       });
-      await this.checkStreakAchievements(userId, 1, tx);
+      await this.checkStreakAchievements(userId, Math.max(1, initialBest), tx);
       return updated;
     }
 
@@ -34,6 +35,11 @@ export class StreakService {
 
     // Se já teve atividade registrada hoje, não altera
     if (todayStr === lastStr) {
+      await this.checkStreakAchievements(
+        userId,
+        Math.max(user.currentStreak, user.bestStreak),
+        tx,
+      );
       return { currentStreak: user.currentStreak, bestStreak: user.bestStreak };
     }
 
@@ -63,45 +69,60 @@ export class StreakService {
       select: { currentStreak: true, bestStreak: true },
     });
 
-    await this.checkStreakAchievements(userId, newCurrentStreak, tx);
+    await this.checkStreakAchievements(
+      userId,
+      Math.max(newCurrentStreak, newBestStreak),
+      tx,
+    );
     return updated;
   }
 
   private async checkStreakAchievements(
     userId: string,
-    currentStreak: number,
+    effectiveStreak: number,
     tx: Prisma.TransactionClient,
   ) {
-    try {
-      // 1. Conquista de 30 Dias (STREAK_30)
-      const ach30 = await tx.achievement.findUnique({
-        where: { code: "STREAK_30" },
-      });
+    const milestones = [
+      { code: "STREAK_3", target: 3 },
+      { code: "STREAK_7", target: 7 },
+      { code: "STREAK_14", target: 14 },
+      { code: "STREAK_30", target: 30 },
+      { code: "STREAK_60", target: 60 },
+      { code: "STREAK_100", target: 100 },
+    ];
 
-      if (ach30) {
+    try {
+      for (const milestone of milestones) {
+        const ach = await tx.achievement.findUnique({
+          where: { code: milestone.code },
+        });
+
+        if (!ach) continue;
+
         const existingUserAch = await tx.userAchievement.findUnique({
           where: {
-            userId_achievementId: { userId, achievementId: ach30.id },
+            userId_achievementId: { userId, achievementId: ach.id },
           },
         });
 
         if (existingUserAch && existingUserAch.progress >= 100) {
-          return;
+          continue;
         }
 
-        const progress30 = Math.min(
-          Math.round((currentStreak / 30) * 100),
+        const progress = Math.min(
+          Math.round((effectiveStreak / milestone.target) * 100),
           100,
         );
-        if (progress30 >= 100) {
+
+        if (progress >= 100) {
           await tx.userAchievement.upsert({
             where: {
-              userId_achievementId: { userId, achievementId: ach30.id },
+              userId_achievementId: { userId, achievementId: ach.id },
             },
             update: { progress: 100, unlockedAt: new Date() },
             create: {
               userId,
-              achievementId: ach30.id,
+              achievementId: ach.id,
               progress: 100,
               unlockedAt: new Date(),
             },
@@ -109,10 +130,10 @@ export class StreakService {
 
           await tx.ranking.upsert({
             where: { userId },
-            update: { points: { increment: ach30.xpReward } },
+            update: { points: { increment: ach.xpReward } },
             create: {
               userId,
-              points: ach30.xpReward,
+              points: ach.xpReward,
               wins: 0,
               losses: 0,
             },
@@ -120,10 +141,10 @@ export class StreakService {
         } else {
           await tx.userAchievement.upsert({
             where: {
-              userId_achievementId: { userId, achievementId: ach30.id },
+              userId_achievementId: { userId, achievementId: ach.id },
             },
-            update: { progress: progress30 },
-            create: { userId, achievementId: ach30.id, progress: progress30 },
+            update: { progress },
+            create: { userId, achievementId: ach.id, progress },
           });
         }
       }

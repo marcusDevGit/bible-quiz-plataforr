@@ -49,6 +49,18 @@ function clearRoomTimeout(code: string) {
   }
 }
 
+function getArenaStatsPayload(io: Server) {
+  return {
+    onlineCount: io.engine?.clientsCount ?? io.sockets.sockets.size,
+    activeRooms: rooms.size,
+    queueCount: quickMatchQueue.length,
+  };
+}
+
+function broadcastArenaStats(io: Server) {
+  io.emit("arena_stats", getArenaStatsPayload(io));
+}
+
 // Auxiliar para gerar código de sala de 6 dígitos único
 function generateRoomCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -63,6 +75,13 @@ function generateRoomCode(): string {
 }
 
 export function registerMultiplayerHandlers(io: Server, socket: Socket) {
+  // Emite estatísticas da Arena ao conectar
+  broadcastArenaStats(io);
+
+  socket.on("get_arena_stats", () => {
+    socket.emit("arena_stats", getArenaStatsPayload(io));
+  });
+
   // ─── PARTIDA RÁPIDA (MATCHMAKING) ──────────────────────────────────────────
   socket.on(
     "find_quick_match",
@@ -73,7 +92,8 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
       level?: number;
     }) => {
       try {
-        const { userId, name, avatar, level = 1 } = data;
+        const { name, avatar, level = 1 } = data;
+        const userId = socket.data?.userId || data.userId;
 
         // Evita adicionar o mesmo jogador duas vezes na fila
         const existingIndex = quickMatchQueue.findIndex(
@@ -193,7 +213,8 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
       theme?: string;
     }) => {
       try {
-        const { userId, name, avatar, level = 1, theme } = data;
+        const { name, avatar, level = 1, theme } = data;
+        const userId = socket.data?.userId || data.userId;
         const code = generateRoomCode();
 
         const newPlayer: Player = {
@@ -241,7 +262,8 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
       avatar: string | null;
     }) => {
       try {
-        const { code, userId, name, avatar } = data;
+        const { code, name, avatar } = data;
+        const userId = socket.data?.userId || data.userId;
         const upperCode = code.toUpperCase();
         const room = rooms.get(upperCode);
 
@@ -434,6 +456,10 @@ export function registerMultiplayerHandlers(io: Server, socket: Socket) {
         handlePlayerLeaving(io, socket, roomCode);
       }
     }
+  });
+
+  socket.on("disconnect", () => {
+    broadcastArenaStats(io);
   });
 }
 // ─── INICIALIZAR PARTIDA (Reutilizável) ──────────────────────────────────────
@@ -637,6 +663,53 @@ async function endGame(io: Server, room: Room) {
           await tx.matchQuestion.createMany({
             data: matchQuestionsData,
           });
+
+          const questionStatsMap = new Map<
+            string,
+            { played: number; correct: number }
+          >();
+          for (const ans of matchQuestionsData) {
+            const curr = questionStatsMap.get(ans.questionId) || {
+              played: 0,
+              correct: 0,
+            };
+            curr.played += 1;
+            if (ans.isCorrect) curr.correct += 1;
+            questionStatsMap.set(ans.questionId, curr);
+          }
+
+          const existingQuestions = await tx.question.findMany({
+            where: { id: { in: Array.from(questionStatsMap.keys()) } },
+            select: { id: true, timesPlayed: true, correctRate: true },
+          });
+
+          for (const q of existingQuestions) {
+            const delta = questionStatsMap.get(q.id);
+            if (!delta) continue;
+            const normalizedPrevRate =
+              q.correctRate > 0 && q.correctRate <= 1
+                ? q.correctRate * 100
+                : q.correctRate;
+            const prevCorrectCount = (normalizedPrevRate / 100) * q.timesPlayed;
+            const newTimesPlayed = q.timesPlayed + delta.played;
+            const newCorrectRate =
+              newTimesPlayed > 0
+                ? Number(
+                    (
+                      ((prevCorrectCount + delta.correct) / newTimesPlayed) *
+                      100
+                    ).toFixed(1),
+                  )
+                : 0;
+
+            await tx.question.update({
+              where: { id: q.id },
+              data: {
+                timesPlayed: newTimesPlayed,
+                correctRate: newCorrectRate,
+              },
+            });
+          }
         }
 
         // Atualiza rankings dos dois jogadores

@@ -79,4 +79,22 @@ export class AuthController {
       next(error);
     }
   };
+
+  getAdminStats = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const stats = await authService.getAdminStats();
+      return res.status(200).json(stats);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  listUsers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const users = await authService.listUsers();
+      return res.status(200).json({ users });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

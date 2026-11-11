@@ -35,9 +35,297 @@ export class AchievementsService {
       await this.checkMasterGospels(userId, lastMatchScore, lastMatchTotal, tx);
       await this.checkWisdomOfSolomon(userId, tx);
       await this.checkProphetOfNations(userId, tx);
+      await this.checkProgressionAndArenaMilestones(
+        userId,
+        lastMatchScore,
+        lastMatchTotal,
+        tx,
+      );
+      await this.checkBiblicalCategoryMilestones(userId, tx);
     } catch (error) {
       console.error("❌ Erro ao validar conquistas pós-partida:", error);
     }
+  }
+
+  private async updateOrUnlockByCode(
+    userId: string,
+    code: string,
+    rawProgress: number,
+    tx: Prisma.TransactionClient = prisma,
+  ) {
+    const achievement = await achievementsRepository.findByCode(code, tx);
+    if (!achievement) return;
+
+    const userAch = await achievementsRepository.findUserAchievement(
+      userId,
+      achievement.id,
+      tx,
+    );
+    if (userAch && userAch.progress >= 100) return;
+
+    const progress = Math.min(100, Math.max(0, Math.round(rawProgress)));
+
+    if (progress >= 100) {
+      await achievementsRepository.unlock(userId, achievement.id, tx);
+
+      await tx.ranking.upsert({
+        where: { userId },
+        update: { points: { increment: achievement.xpReward } },
+        create: { userId, points: achievement.xpReward },
+      });
+    } else if (progress > (userAch?.progress ?? 0)) {
+      await achievementsRepository.updateProgress(
+        userId,
+        achievement.id,
+        progress,
+        tx,
+      );
+    }
+  }
+
+  private async checkProgressionAndArenaMilestones(
+    userId: string,
+    lastMatchScore: number,
+    lastMatchTotal: number,
+    tx: Prisma.TransactionClient = prisma,
+  ) {
+    const userMatchFilter: Prisma.MatchWhereInput = {
+      OR: [{ playerOne: userId }, { playerTwo: userId }],
+    };
+
+    const [
+      totalMatches,
+      multiplayerMatches,
+      totalQuestions,
+      correctQuestions,
+      userRecord,
+      rankingRecord,
+    ] = await Promise.all([
+      tx.match.count({ where: userMatchFilter }),
+      tx.match.count({
+        where: {
+          ...userMatchFilter,
+          playerTwo: { not: null },
+        },
+      }),
+      tx.matchQuestion.count({ where: { match: userMatchFilter } }),
+      tx.matchQuestion.count({
+        where: { match: userMatchFilter, isCorrect: true },
+      }),
+      tx.user.findUnique({
+        where: { id: userId },
+        select: { currentStreak: true, bestStreak: true },
+      }),
+      tx.ranking.findUnique({
+        where: { userId },
+        select: { points: true, wins: true },
+      }),
+    ]);
+
+    // Marcos de Partidas e Perfeição
+    await this.updateOrUnlockByCode(
+      userId,
+      "FIRST_MATCH",
+      (totalMatches / 1) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "VETERAN_PLAYER",
+      (totalMatches / 25) * 100,
+      tx,
+    );
+    if (lastMatchTotal > 0 && lastMatchScore === lastMatchTotal) {
+      await this.updateOrUnlockByCode(userId, "PERFECT_SCORE", 100, tx);
+    }
+
+    // Marcos de Perguntas Respondidas e Acertadas
+    await this.updateOrUnlockByCode(
+      userId,
+      "DEDICATED_STUDENT",
+      (totalQuestions / 50) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "BIBLE_SCHOLAR",
+      (totalQuestions / 100) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "THOUSAND_STEPS",
+      (totalQuestions / 250) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "CENTURION_FAITH",
+      (correctQuestions / 100) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "GRAND_THEOLOGIAN",
+      (correctQuestions / 500) * 100,
+      tx,
+    );
+
+    // Marcos de Ofensiva Diária (Streaks)
+    const maxStreak = Math.max(
+      userRecord?.currentStreak ?? 0,
+      userRecord?.bestStreak ?? 0,
+    );
+    await this.updateOrUnlockByCode(userId, "STREAK_3", (maxStreak / 3) * 100, tx);
+    await this.updateOrUnlockByCode(userId, "STREAK_7", (maxStreak / 7) * 100, tx);
+    await this.updateOrUnlockByCode(
+      userId,
+      "STREAK_14",
+      (maxStreak / 14) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "STREAK_30",
+      (maxStreak / 30) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "STREAK_60",
+      (maxStreak / 60) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "STREAK_100",
+      (maxStreak / 100) * 100,
+      tx,
+    );
+
+    // Marcos de Arena Multiplayer & Ranking
+    const totalPoints = rankingRecord?.points ?? 0;
+    const totalWins = rankingRecord?.wins ?? 0;
+
+    await this.updateOrUnlockByCode(
+      userId,
+      "ARENA_DEBUT",
+      (multiplayerMatches / 1) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "ARENA_CHAMPION",
+      (totalWins / 10) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "ARENA_LEGEND",
+      (totalWins / 50) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "XP_HUNTER",
+      (totalPoints / 1000) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "XP_MASTER",
+      (totalPoints / 5000) * 100,
+      tx,
+    );
+  }
+
+  private async checkBiblicalCategoryMilestones(
+    userId: string,
+    tx: Prisma.TransactionClient = prisma,
+  ) {
+    const baseCorrectFilter: Prisma.MatchQuestionWhereInput = {
+      match: {
+        OR: [{ playerOne: userId }, { playerTwo: userId }],
+      },
+      isCorrect: true,
+    };
+
+    const [torahCorrect, paulCorrect, kingsCorrect, revelationCorrect] =
+      await Promise.all([
+        tx.matchQuestion.count({
+          where: {
+            ...baseCorrectFilter,
+            question: {
+              category: {
+                name: {
+                  in: ["Pentateuco", "Patriarcas", "Antigo Testamento"],
+                },
+              },
+            },
+          },
+        }),
+        tx.matchQuestion.count({
+          where: {
+            ...baseCorrectFilter,
+            question: {
+              category: {
+                name: {
+                  in: ["Atos dos Apóstolos", "Cartas Paulinas", "Apóstolos"],
+                },
+              },
+            },
+          },
+        }),
+        tx.matchQuestion.count({
+          where: {
+            ...baseCorrectFilter,
+            question: {
+              category: {
+                name: {
+                  in: ["Juízes", "Reis", "Personagens Bíblicos"],
+                },
+              },
+            },
+          },
+        }),
+        tx.matchQuestion.count({
+          where: {
+            ...baseCorrectFilter,
+            question: {
+              category: {
+                name: {
+                  in: ["Apocalipse", "Milagres"],
+                },
+              },
+            },
+          },
+        }),
+      ]);
+
+    await this.updateOrUnlockByCode(
+      userId,
+      "LAW_OF_MOSES",
+      (torahCorrect / 15) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "APOSTLE_PAUL",
+      (paulCorrect / 15) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "KINGS_AND_JUDGES",
+      (kingsCorrect / 15) * 100,
+      tx,
+    );
+    await this.updateOrUnlockByCode(
+      userId,
+      "REVELATION_SEER",
+      (revelationCorrect / 10) * 100,
+      tx,
+    );
   }
 
   private async checkFirstStep(

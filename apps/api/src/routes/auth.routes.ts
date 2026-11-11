@@ -20,5 +20,7 @@ authRouter.post("/auth/forgot-password", async (req, res) => {
 
 
 authRouter.get("/users/me", authMiddleware, authController.me);
+authRouter.get("/users/admin-stats", authMiddleware, authController.getAdminStats);
+authRouter.get("/users", authMiddleware, authController.listUsers);
 
 export { authRouter };

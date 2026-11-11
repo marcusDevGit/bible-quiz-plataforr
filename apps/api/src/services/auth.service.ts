@@ -4,6 +4,7 @@ import { UserRepository } from "../repositories/user.repository";
 import { AppError } from "../error/app-error";
 import { LoginInput, RegisterInput } from "@bible-quiz/shared-validation";
 import { StreakService } from "./streak.service";
+import { prisma } from "../prisma/client";
 
 const userRepository = new UserRepository();
 const streakService = new StreakService();
@@ -74,5 +75,117 @@ export class AuthService {
       updateData.password = await bcrypt.hash(data.password, 10);
     }
     return userRepository.update(userId, updateData);
+  }
+
+  async getAdminStats() {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const [totalQuestions, matchesToday, totalMatches, totalUsers, recentMatchesRaw] =
+      await Promise.all([
+        prisma.question.count(),
+        prisma.match.count({
+          where: {
+            createdAt: {
+              gte: startOfToday,
+            },
+          },
+        }),
+        prisma.match.count(),
+        prisma.user.count(),
+        prisma.match.findMany({
+          take: 10,
+          orderBy: { createdAt: "desc" },
+          include: {
+            p1: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
+            p2: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        }),
+      ]);
+
+    const recentMatches = recentMatchesRaw.map((match) => ({
+      id: match.id,
+      score: match.score,
+      winner: match.winner,
+      createdAt: match.createdAt,
+      user1: match.p1,
+      user2: match.p2,
+    }));
+
+    return {
+      totalQuestions,
+      matchesToday,
+      totalMatches,
+      totalUsers,
+      recentMatches,
+    };
+  }
+
+  async listUsers() {
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+        currentStreak: true,
+        bestStreak: true,
+        createdAt: true,
+        ranking: {
+          select: {
+            points: true,
+            wins: true,
+            losses: true,
+          },
+        },
+        _count: {
+          select: {
+            matchesAsPlayer1: true,
+            matchesAsPlayer2: true,
+          },
+        },
+      },
+    });
+
+    return users.map((u) => {
+      const totalMatches = u._count.matchesAsPlayer1 + u._count.matchesAsPlayer2;
+      const points = u.ranking?.points ?? 0;
+      const wins = u.ranking?.wins ?? 0;
+      const losses = u.ranking?.losses ?? 0;
+
+      return {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        avatar: u.avatar,
+        currentStreak: u.currentStreak,
+        bestStreak: u.bestStreak,
+        createdAt: u.createdAt,
+        points,
+        wins,
+        losses,
+        totalMatches,
+        matchesCount: totalMatches,
+        matchesPlayed: totalMatches,
+        ranking: {
+          points,
+          wins,
+          losses,
+        },
+      };
+    });
   }
 }

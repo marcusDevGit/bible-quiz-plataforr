@@ -66,6 +66,53 @@ export class MatchController {
               isCorrect: ans.isCorrect,
             })),
           });
+
+          const questionStatsMap = new Map<
+            string,
+            { played: number; correct: number }
+          >();
+          for (const ans of answers) {
+            const curr = questionStatsMap.get(ans.questionId) || {
+              played: 0,
+              correct: 0,
+            };
+            curr.played += 1;
+            if (ans.isCorrect) curr.correct += 1;
+            questionStatsMap.set(ans.questionId, curr);
+          }
+
+          const existingQuestions = await tx.question.findMany({
+            where: { id: { in: Array.from(questionStatsMap.keys()) } },
+            select: { id: true, timesPlayed: true, correctRate: true },
+          });
+
+          for (const q of existingQuestions) {
+            const delta = questionStatsMap.get(q.id);
+            if (!delta) continue;
+            const normalizedPrevRate =
+              q.correctRate > 0 && q.correctRate <= 1
+                ? q.correctRate * 100
+                : q.correctRate;
+            const prevCorrectCount = (normalizedPrevRate / 100) * q.timesPlayed;
+            const newTimesPlayed = q.timesPlayed + delta.played;
+            const newCorrectRate =
+              newTimesPlayed > 0
+                ? Number(
+                    (
+                      ((prevCorrectCount + delta.correct) / newTimesPlayed) *
+                      100
+                    ).toFixed(1),
+                  )
+                : 0;
+
+            await tx.question.update({
+              where: { id: q.id },
+              data: {
+                timesPlayed: newTimesPlayed,
+                correctRate: newCorrectRate,
+              },
+            });
+          }
         }
 
         const userRanking = await tx.ranking.upsert({

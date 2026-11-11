@@ -1,6 +1,9 @@
 import { Server as HttpServer } from "http";
 import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
 import { registerMultiplayerHandlers } from "./sockets/multiplayer.handler";
+
+const JWT_SECRET = process.env.JWT_SECRET || "secret_Bible_DeveLop_amb";
 
 let io: Server | null = null;
 
@@ -10,6 +13,23 @@ export function initSocket(server: HttpServer): Server {
       origin: "*",
       methods: ["GET", "POST"],
     },
+  });
+
+  io.use((socket, next) => {
+    const rawToken = socket.handshake.auth?.token;
+    if (rawToken && typeof rawToken === "string") {
+      try {
+        const cleanToken = rawToken.replace(/^Bearer\s+/i, "");
+        const decoded = jwt.verify(cleanToken, JWT_SECRET) as {
+          sub?: string;
+          id?: string;
+        };
+        socket.data.userId = decoded.id || decoded.sub;
+      } catch (err) {
+        console.warn(`⚠️ Token JWT inválido no socket (${socket.id})`);
+      }
+    }
+    next();
   });
 
   io.on("connection", (socket) => {
