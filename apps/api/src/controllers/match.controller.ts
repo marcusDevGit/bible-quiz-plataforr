@@ -46,7 +46,15 @@ export class MatchController {
         });
       }
 
-      const { score, answers } = parsed.data;
+      const { score: rawScore, answers } = parsed.data;
+      const verifiedCorrectCount =
+        answers && answers.length > 0
+          ? answers.filter((ans) => ans.isCorrect).length
+          : rawScore;
+      const score =
+        answers && answers.length > 0
+          ? Math.min(rawScore, verifiedCorrectCount)
+          : rawScore;
       const xpGained = score * 15;
 
       const result = await prisma.$transaction(async (tx) => {
