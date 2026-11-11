@@ -1,11 +1,26 @@
 import { Slot } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { View, StyleSheet, Platform } from "react-native";
+import { View, StyleSheet, Platform, LogBox } from "react-native";
 import React from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./global.css";
 
-const queryClient = new QueryClient();
+LogBox.ignoreLogs([
+  "ImageBackground is deprecated",
+  "[Reanimated] Dependencies should only be used on the web",
+]);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,
+      gcTime: 5 * 60 * 1000,
+      retry: 1,
+      refetchOnReconnect: true,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export default function RootLayout() {
   return (

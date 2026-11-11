@@ -285,7 +285,7 @@ export default function MultiplayerGameScreen() {
               width: `${(timeLeft / SECONDS_PER_QUESTION) * 100}%`,
               backgroundColor: timeLeft <= 4 ? "#ba1a1a" : "#fea619",
             }}
-            className="h-full rounded-r-full transition-all"
+            className="h-full rounded-r-full"
           />
         </View>
       </View>

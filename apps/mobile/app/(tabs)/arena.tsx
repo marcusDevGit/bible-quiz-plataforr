@@ -173,7 +173,7 @@ export default function ArenaRoute() {
               style={{ backgroundColor: "rgba(39, 195, 138, 0.1)" }}
               className="flex-row items-center gap-2 px-4 py-1.5 rounded-full border border-on-tertiary-container/25"
             >
-              <View className="w-2.5 h-2.5 rounded-full bg-on-tertiary-container animate-pulse" />
+              <View className="w-2.5 h-2.5 rounded-full bg-on-tertiary-container" />
               <Text className="text-on-tertiary-container font-semibold text-xs">
                 {onlineCount === 1
                   ? "1 jogador online na Arena agora"
