@@ -29,7 +29,7 @@ Interface web administrativa construída com React, TypeScript, Vite e TailwindC
 Crie um arquivo `.env` na raiz do diretório `apps/admin` apontando para a sua API local ou de produção:
 
 ```env
-VITE_API_URL="http://localhost:3000"
+VITE_API_URL="http://localhost:3001"
 ```
 
 ### 2. Inicializar o Servidor Local
@@ -47,14 +47,11 @@ O painel administrativo estará disponível em `http://localhost:5173`.
 ```
 apps/admin/
 ├── src/
-│   ├── components/       # Componentes reutilizáveis (Layout, Sidebar, Header)
-│   ├── features/         # Módulos principais (auth, categories, questions)
-│   │   ├── categories/   # CRUD de Categorias (Formulários, Listas, Tabela)
-│   │   └── questions/    # CRUD de Perguntas (Formulários, Listas)
-│   ├── hooks/            # Hooks customizados para chamadas HTTP e autenticação
-│   ├── services/         # Instância do Axios e requisições centrais da API
-│   ├── App.tsx           # Roteamento e layouts gerais da aplicação
-│   └── main.tsx          # Ponto de entrada do React
+│   ├── components/       # Componentes de UI, tabelas, modais e layout (Sidebar, Header, QuestionTable, CategoryTable)
+│   ├── pages/            # Páginas da aplicação (Dashboard, Login, Questions, Categories)
+│   ├── service/          # Serviços HTTP e integração com a API (auth, question, category)
+│   ├── App.tsx           # Layout principal protegido e barra superior
+│   └── main.tsx          # Ponto de entrada do React e definição de rotas
 ├── package.json
 └── vite.config.ts
 ```

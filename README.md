@@ -94,6 +94,10 @@ Toda a identidade visual da plataforma mobile foi baseada nas especificações d
      DATABASE_URL="postgresql://usuario:senha@host/banco?sslmode=require"
      JWT_SECRET="seu_jwt_secret_seguro"
      ```
+   - Em `apps/admin/`, crie o arquivo `.env`:
+     ```env
+     VITE_API_URL="http://localhost:3001"
+     ```
    - Em `apps/mobile/`, crie o arquivo `.env`:
      ```env
      EXPO_PUBLIC_API_URL="http://SEU_IP_LOCAL:3001"

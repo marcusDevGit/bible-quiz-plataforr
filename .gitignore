@@ -7,4 +7,7 @@ node_modules
 dist/
 .agents/
 .ia/
-bible-quest-Design/
+.expo/
+bible_quest_model/
+resumo_*.md
+ROADMAP_*.md
