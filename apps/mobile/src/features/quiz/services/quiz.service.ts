@@ -10,9 +10,18 @@ export interface QuestionResponse {
     name: string;
     icon: string;
   };
-  reference: string;
-  explanation: string;
-  alternatives: { id?: string; description: string; isCorrect: boolean }[];
+  reference?: string | null;
+  explanation?: string | null;
+  alternatives: { id: string; description: string; isCorrect?: boolean }[];
+}
+
+export interface CheckQuestionAnswerResponse {
+  questionId: string;
+  isCorrect: boolean;
+  correctAlternativeId: string | null;
+  correctAlternative: string | null;
+  explanation: string | null;
+  reference: string | null;
 }
 
 interface PaginatedQuestions {
@@ -50,6 +59,19 @@ export const quizService = {
     const shuffled = [...pool].sort(() => 0.5 - Math.random());
 
     return shuffled.slice(0, limit);
+  },
+
+  async checkQuestionAnswer(
+    questionId: string,
+    alternativeId?: string | null,
+  ): Promise<CheckQuestionAnswerResponse> {
+    return apiFetch<CheckQuestionAnswerResponse>(
+      `/questions/${encodeURIComponent(questionId)}/check`,
+      {
+        method: "POST",
+        body: JSON.stringify({ alternativeId: alternativeId ?? null }),
+      },
+    );
   },
 
   async submitMatch(

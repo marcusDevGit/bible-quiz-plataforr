@@ -38,6 +38,9 @@ export default function QuizScreen() {
   const [answers, setAnswers] = useState<MatchAnswer[]>([]);
   const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
   const [isShowingFeedback, setIsShowingFeedback] = useState(false);
+  const [isCheckingAnswer, setIsCheckingAnswer] = useState(false);
+  const [verifiedCorrectAltId, setVerifiedCorrectAltId] = useState<string | null>(null);
+  const [verifiedIsCorrect, setVerifiedIsCorrect] = useState<boolean | null>(null);
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -75,46 +78,82 @@ export default function QuizScreen() {
     [isSurvivalMode, questions, router, startTime]
   );
 
-  const handleTimeoutOrSkip = useCallback(() => {
-    if (!questions || !questions[currentIndex] || isShowingFeedback) return;
-    const currentQ = questions[currentIndex];
-    const correctAlt = currentQ.alternatives.find((a: any) => a.isCorrect);
-    const updatedAnswers: MatchAnswer[] = [
-      ...answers,
-      {
-        questionId: currentQ.id,
-        isCorrect: false,
-        questionTitle: currentQ.title,
-        reference: currentQ.reference,
-        explanation: currentQ.explanation,
-        selectedAlternative: "Tempo esgotado / Pulou",
-        correctAlternative: correctAlt?.description,
-      },
-    ];
-    setAnswers(updatedAnswers);
+  const submitUnanswered = useCallback(
+    async (reasonLabel: string) => {
+      if (!questions || !questions[currentIndex] || isShowingFeedback || isCheckingAnswer) {
+        return;
+      }
+      const currentQ = questions[currentIndex];
+      setIsCheckingAnswer(true);
 
-    if (isSurvivalMode) {
-      finishQuiz(score, updatedAnswers);
-      return;
-    }
+      let correctAlternative = "";
+      let reference = currentQ.reference ?? undefined;
+      let explanation = currentQ.explanation ?? undefined;
 
-    if (currentIndex + 1 < questions.length) {
-      setCurrentIndex((prev) => prev + 1);
-      setSelectedOption(null);
-      setTimeLeft(SECONDS_PER_QUESTION);
-    } else {
-      finishQuiz(score, updatedAnswers);
-    }
-  }, [answers, currentIndex, finishQuiz, isShowingFeedback, isSurvivalMode, questions, score]);
+      try {
+        const result = await quizService.checkQuestionAnswer(currentQ.id, null);
+        correctAlternative = result.correctAlternative ?? "";
+        reference = result.reference ?? reference;
+        explanation = result.explanation ?? explanation;
+      } catch {
+        const fallbackCorrect = currentQ.alternatives.find((a) => a.isCorrect);
+        correctAlternative = fallbackCorrect?.description ?? "";
+      } finally {
+        setIsCheckingAnswer(false);
+      }
+
+      const updatedAnswers: MatchAnswer[] = [
+        ...answers,
+        {
+          questionId: currentQ.id,
+          isCorrect: false,
+          questionTitle: currentQ.title,
+          reference,
+          explanation,
+          selectedAlternative: reasonLabel,
+          correctAlternative,
+        },
+      ];
+      setAnswers(updatedAnswers);
+
+      if (isSurvivalMode || currentIndex + 1 >= questions.length) {
+        finishQuiz(score, updatedAnswers);
+      } else {
+        setCurrentIndex((prev) => prev + 1);
+        setSelectedOption(null);
+        setVerifiedCorrectAltId(null);
+        setVerifiedIsCorrect(null);
+        setTimeLeft(SECONDS_PER_QUESTION);
+      }
+    },
+    [answers, currentIndex, finishQuiz, isCheckingAnswer, isShowingFeedback, isSurvivalMode, questions, score]
+  );
+
+  const handleSkipQuestion = useCallback(() => {
+    void submitUnanswered("Pulou");
+  }, [submitUnanswered]);
+
+  const handleTimeOut = useCallback(() => {
+    void submitUnanswered("Tempo esgotado");
+  }, [submitUnanswered]);
 
   useEffect(() => {
-    if (isLoading || isError || isShowingFeedback || !questions || questions.length === 0) return;
+    if (
+      isLoading ||
+      isError ||
+      isShowingFeedback ||
+      isCheckingAnswer ||
+      !questions ||
+      questions.length === 0
+    ) {
+      return;
+    }
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleTimeoutOrSkip();
+          handleTimeOut();
           return 0;
         }
         return prev - 1;
@@ -122,48 +161,74 @@ export default function QuizScreen() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentIndex, handleTimeoutOrSkip, isError, isLoading, isShowingFeedback, questions]);
+  }, [
+    currentIndex,
+    handleTimeOut,
+    isCheckingAnswer,
+    isError,
+    isLoading,
+    isShowingFeedback,
+    questions,
+  ]);
 
   // Confirmar resposta selecionada
-  const handleConfirm = () => {
-    if (selectedOption === null || !questions || isShowingFeedback) return;
+  const handleConfirm = async () => {
+    if (selectedOption === null || !questions || isShowingFeedback || isCheckingAnswer) {
+      return;
+    }
     const currentQ = questions[currentIndex];
     const alternatives = currentQ.alternatives || [];
     const chosenAlternative = alternatives[selectedOption];
-    const isCorrect = !!(chosenAlternative && chosenAlternative.isCorrect);
+    const selectedAltId = chosenAlternative?.id ?? null;
 
-    const newScore = isCorrect ? score + 1 : score;
-    if (isCorrect) {
-      setScore(newScore);
-    }
+    setIsCheckingAnswer(true);
+    try {
+      const result = await quizService.checkQuestionAnswer(currentQ.id, selectedAltId);
+      const isCorrect = result.isCorrect;
 
-    const correctAlt = currentQ.alternatives.find((a: any) => a.isCorrect);
-    const selectedAlt = currentQ.alternatives[selectedOption];
-    const updatedAnswers: MatchAnswer[] = [
-      ...answers,
-      {
-        questionId: currentQ.id,
-        isCorrect,
-        questionTitle: currentQ.title,
-        reference: currentQ.reference,
-        explanation: currentQ.explanation,
-        selectedAlternative: selectedAlt?.description || "",
-        correctAlternative: correctAlt?.description || "",
-      },
-    ];
-    setAnswers(updatedAnswers);
-    setIsShowingFeedback(true);
-
-    feedbackTimeoutRef.current = setTimeout(() => {
-      setIsShowingFeedback(false);
-      if ((isSurvivalMode && !isCorrect) || currentIndex + 1 >= questions.length) {
-        finishQuiz(newScore, updatedAnswers);
-      } else {
-        setCurrentIndex((prev) => prev + 1);
-        setSelectedOption(null);
-        setTimeLeft(SECONDS_PER_QUESTION);
+      const newScore = isCorrect ? score + 1 : score;
+      if (isCorrect) {
+        setScore(newScore);
       }
-    }, 750);
+
+      setVerifiedCorrectAltId(result.correctAlternativeId);
+      setVerifiedIsCorrect(isCorrect);
+
+      const updatedAnswers: MatchAnswer[] = [
+        ...answers,
+        {
+          questionId: currentQ.id,
+          isCorrect,
+          questionTitle: currentQ.title,
+          reference: result.reference ?? currentQ.reference ?? undefined,
+          explanation: result.explanation ?? currentQ.explanation ?? undefined,
+          selectedAlternative: chosenAlternative?.description || "",
+          correctAlternative: result.correctAlternative ?? "",
+        },
+      ];
+      setAnswers(updatedAnswers);
+      setIsShowingFeedback(true);
+
+      feedbackTimeoutRef.current = setTimeout(() => {
+        setIsShowingFeedback(false);
+        setVerifiedCorrectAltId(null);
+        setVerifiedIsCorrect(null);
+        if ((isSurvivalMode && !isCorrect) || currentIndex + 1 >= questions.length) {
+          finishQuiz(newScore, updatedAnswers);
+        } else {
+          setCurrentIndex((prev) => prev + 1);
+          setSelectedOption(null);
+          setTimeLeft(SECONDS_PER_QUESTION);
+        }
+      }, 750);
+    } catch (error: any) {
+      Alert.alert(
+        "Erro de conexão",
+        error?.message || "Não foi possível validar sua resposta. Tente novamente."
+      );
+    } finally {
+      setIsCheckingAnswer(false);
+    }
   };
 
   // Diálogo de confirmação para sair
@@ -386,8 +451,16 @@ export default function QuizScreen() {
               {alternatives.map((alt, index) => {
                 const isSelected = selectedOption === index;
                 const letter = LETTERS[index] || `${index + 1}`;
-                const showCorrect = isShowingFeedback && !!alt.isCorrect;
-                const showWrong = isShowingFeedback && isSelected && !alt.isCorrect;
+                const isAltCorrect = verifiedCorrectAltId
+                  ? alt.id === verifiedCorrectAltId
+                  : isSelected && verifiedIsCorrect === true
+                    ? true
+                    : !!alt.isCorrect;
+                const showCorrect = isShowingFeedback && isAltCorrect;
+                const showWrong =
+                  isShowingFeedback &&
+                  isSelected &&
+                  (verifiedIsCorrect !== null ? !verifiedIsCorrect : !isAltCorrect);
 
                 const borderColor = showCorrect
                   ? "#16a34a"
@@ -415,7 +488,7 @@ export default function QuizScreen() {
                   <TouchableOpacity
                     key={index}
                     activeOpacity={0.8}
-                    disabled={isShowingFeedback}
+                    disabled={isShowingFeedback || isCheckingAnswer}
                     onPress={() => setSelectedOption(index)}
                     style={{
                       borderColor,
@@ -507,8 +580,8 @@ export default function QuizScreen() {
               borderWidth: 1,
             }}
             className="flex-1 py-4 px-2 rounded-2xl items-center justify-center"
-            onPress={handleTimeoutOrSkip}
-            disabled={isShowingFeedback}
+            onPress={handleSkipQuestion}
+            disabled={isShowingFeedback || isCheckingAnswer}
             activeOpacity={0.7}
           >
             <Text className="text-on-surface-variant font-bold text-sm">
@@ -518,17 +591,23 @@ export default function QuizScreen() {
           <TouchableOpacity
             style={{
               backgroundColor:
-                selectedOption !== null && !isShowingFeedback
+                selectedOption !== null && !isShowingFeedback && !isCheckingAnswer
                   ? "#00236f"
                   : "#8ea4d2",
             }}
             className="flex-[2] py-4 px-6 rounded-2xl items-center justify-center flex-row gap-2"
             onPress={handleConfirm}
-            disabled={selectedOption === null || isShowingFeedback}
+            disabled={selectedOption === null || isShowingFeedback || isCheckingAnswer}
             activeOpacity={0.8}
           >
-            <Text className="text-white font-bold text-sm">Confirmar</Text>
-            <MaterialIcons name="arrow-forward" size={18} color="#ffffff" />
+            {isCheckingAnswer ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <>
+                <Text className="text-white font-bold text-sm">Confirmar</Text>
+                <MaterialIcons name="arrow-forward" size={18} color="#ffffff" />
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </View>
