@@ -59,6 +59,100 @@ export class AuthService {
     };
   }
 
+  async getProfile(userId: string) {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new AppError("Usuário não encontrado", 404);
+    }
+
+    const userMatchWhere = {
+      OR: [{ playerOne: userId }, { playerTwo: userId }],
+    };
+
+    const [
+      recentMatchesRaw,
+      totalMatches,
+      ranking,
+      totalAnswered,
+      correctAnswers,
+    ] = await Promise.all([
+      prisma.match.findMany({
+        where: userMatchWhere,
+        take: 10,
+        orderBy: { createdAt: "desc" },
+        include: {
+          p1: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+          p2: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+          matchQuestions: {
+            select: {
+              isCorrect: true,
+            },
+          },
+        },
+      }),
+      prisma.match.count({ where: userMatchWhere }),
+      prisma.ranking.findUnique({
+        where: { userId },
+        select: { points: true, wins: true, losses: true },
+      }),
+      prisma.matchQuestion.count({
+        where: { match: userMatchWhere },
+      }),
+      prisma.matchQuestion.count({
+        where: { match: userMatchWhere, isCorrect: true },
+      }),
+    ]);
+
+    const recentMatches = recentMatchesRaw.map((m) => ({
+      id: m.id,
+      score: m.score,
+      correctAnswers: m.matchQuestions.filter((mq) => mq.isCorrect).length,
+      winner: m.winner,
+      playerOne: m.playerOne,
+      playerTwo: m.playerTwo,
+      createdAt: m.createdAt,
+      user1: m.p1,
+      user2: m.p2,
+      _count: {
+        questions: m.matchQuestions.length,
+        matchQuestions: m.matchQuestions.length,
+      },
+    }));
+
+    const accuracy =
+      totalAnswered > 0
+        ? Math.round((correctAnswers / totalAnswered) * 100)
+        : 0;
+
+    const stats = {
+      totalMatches,
+      wins: ranking?.wins ?? 0,
+      losses: ranking?.losses ?? 0,
+      points: ranking?.points ?? 0,
+      totalAnswered,
+      correctAnswers,
+      accuracy,
+    };
+
+    return {
+      ...user,
+      recentMatches,
+      stats,
+    };
+  }
+
   async updateProfile(
     userId: string,
     data: { name?: string; password?: string; avatar?: string },

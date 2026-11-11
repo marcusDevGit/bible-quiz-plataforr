@@ -4,11 +4,8 @@ import { AuthService } from "../services/auth.service";
 import { registerSchema, loginSchema } from "@bible-quiz/shared-validation";
 
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
-import { AppError } from "../error/app-error";
-import { UserRepository } from "../repositories/user.repository";
 
 const authService = new AuthService();
-const userRepository = new UserRepository();
 
 const updateProfileSchema = z.object({
   name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres").optional(),
@@ -50,13 +47,12 @@ export class AuthController {
   me = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = (req as AuthenticatedRequest).userId;
-
-      const user = await userRepository.findById(userId);
-
-      if (!user) {
-        throw new AppError("Usuário não encontrado", 404);
-      }
-      return res.status(200).json({ user });
+      const user = await authService.getProfile(userId);
+      return res.status(200).json({
+        user,
+        recentMatches: user.recentMatches,
+        stats: user.stats,
+      });
     } catch (error) {
       next(error);
     }
