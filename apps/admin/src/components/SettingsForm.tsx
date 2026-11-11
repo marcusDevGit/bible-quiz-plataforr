@@ -1,30 +1,137 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import { apiFetch } from "../service/api";
+
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string | null;
+}
+
+interface MeResponse {
+  user: AdminUser;
+}
+
+interface UpdateProfileResponse {
+  message: string;
+  user: AdminUser;
+}
+
+const DEFAULT_AVATAR =
+  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
 
 export function SettingsForm() {
-  const [name, setName] = useState("Admin User");
-  const [avatar, setAvatar] = useState(
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuADvyGL6Cfgwp7AvIFgAR0G0RlowoDFnjHHxlYi1vS61apuzUc7hvBoWRiBfdU5vmL7Gbpdip5M3HFFuzpkI3zP4C98VZG9KjrwUSYPSHdpAIcHxQD2Y-v_jWoiFVg9M1rY_-8enFBf3CKXD0uw4GkO7kUFrjaSP-IfKN4KBeZEQc5DiFc4G8l0KDsDChGRlCKcLbJoC-9T3Qn6bd_Gqnat12kp8cBmvW2-LjcTaTsYvGM8qVLaWXTcGAejWPTCunAdhRpZAR-2oia7",
-  );
+  const queryClient = useQueryClient();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [avatar, setAvatar] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password && password !== confirmPassword) {
-      setMessage({ type: "error", text: "As senhas não coincidem." });
+  const { data: meData, isLoading } = useQuery<MeResponse>({
+    queryKey: ["admin-me"],
+    queryFn: () => apiFetch<MeResponse>("/users/me"),
+    retry: 1,
+  });
+
+  useEffect(() => {
+    if (meData?.user) {
+      setName(meData.user.name || "");
+      setEmail(meData.user.email || "");
+      setAvatar(meData.user.avatar || "");
+      localStorage.setItem("admin_user", JSON.stringify(meData.user));
       return;
     }
-    // Simulação visual de sucesso (posteriormente conectada via fetch/axios à API)
-    setMessage({
-      type: "success",
-      text: "Perfil atualizado com sucesso (Simulado)!",
-    });
-    setPassword("");
-    setConfirmPassword("");
+
+    const cached = localStorage.getItem("admin_user");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as Partial<AdminUser>;
+        if (parsed.name) setName(parsed.name);
+        if (parsed.email) setEmail(parsed.email);
+        if (parsed.avatar) setAvatar(parsed.avatar);
+      } catch {
+        // Ignora cache inválido
+      }
+    }
+  }, [meData]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+
+    if (name.trim().length < 3) {
+      setMessage({
+        type: "error",
+        text: "O nome deve ter pelo menos 3 caracteres.",
+      });
+      return;
+    }
+
+    if (password) {
+      if (password.length < 6) {
+        setMessage({
+          type: "error",
+          text: "A nova senha deve ter pelo menos 6 caracteres.",
+        });
+        return;
+      }
+      if (password !== confirmPassword) {
+        setMessage({ type: "error", text: "As senhas não coincidem." });
+        return;
+      }
+    }
+
+    try {
+      setIsSaving(true);
+      const payload: { name: string; avatar: string; password?: string } = {
+        name: name.trim(),
+        avatar: avatar.trim(),
+      };
+      if (password) {
+        payload.password = password;
+      }
+
+      const response = await apiFetch<UpdateProfileResponse>("/users/profile", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+
+      if (response.user) {
+        localStorage.setItem("admin_user", JSON.stringify(response.user));
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["admin-me"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+
+      setMessage({
+        type: "success",
+        text: response.message || "Perfil atualizado com sucesso!",
+      });
+      toast.success("Perfil atualizado com sucesso!");
+      setPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Erro ao atualizar as configurações do perfil.";
+      setMessage({
+        type: "error",
+        text: errorMessage,
+      });
+      toast.error(errorMessage);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -49,10 +156,7 @@ export function SettingsForm() {
 
         <div className="flex items-center gap-6">
           <img
-            src={
-              avatar ||
-              "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
-            }
+            src={avatar || DEFAULT_AVATAR}
             alt="Avatar Preview"
             className="w-20 h-20 rounded-full border border-outline-variant object-cover shadow-sm"
           />
@@ -64,23 +168,40 @@ export function SettingsForm() {
               type="text"
               value={avatar}
               onChange={(e) => setAvatar(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-low text-body-md focus:ring-2 focus:ring-primary focus:bg-surface focus:outline-none transition-all"
+              disabled={isLoading || isSaving}
+              className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-low text-body-md focus:ring-2 focus:ring-primary focus:bg-surface focus:outline-none transition-all disabled:opacity-60"
               placeholder="Cole o link da nova imagem de perfil..."
             />
           </div>
         </div>
 
-        <div className="space-y-1">
-          <label className="block text-sm font-semibold text-on-surface">
-            Nome
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-low text-body-md focus:ring-2 focus:ring-primary focus:bg-surface focus:outline-none transition-all"
-            required
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1">
+            <label className="block text-sm font-semibold text-on-surface">
+              Nome
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={isLoading || isSaving}
+              className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-low text-body-md focus:ring-2 focus:ring-primary focus:bg-surface focus:outline-none transition-all disabled:opacity-60"
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-semibold text-on-surface">
+              E-mail da Conta
+            </label>
+            <input
+              type="email"
+              value={email}
+              disabled
+              className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-low text-body-md text-on-surface-variant opacity-75 cursor-not-allowed"
+              placeholder={isLoading ? "Carregando..." : "E-mail do administrador"}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -92,8 +213,9 @@ export function SettingsForm() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-low text-body-md focus:ring-2 focus:ring-primary focus:bg-surface focus:outline-none transition-all"
-              placeholder="Digite se desejar alterar..."
+              disabled={isLoading || isSaving}
+              className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-low text-body-md focus:ring-2 focus:ring-primary focus:bg-surface focus:outline-none transition-all disabled:opacity-60"
+              placeholder="Digite se desejar alterar (mín. 6 caracteres)..."
             />
           </div>
           <div className="space-y-1">
@@ -104,7 +226,8 @@ export function SettingsForm() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-low text-body-md focus:ring-2 focus:ring-primary focus:bg-surface focus:outline-none transition-all"
+              disabled={isLoading || isSaving}
+              className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-low text-body-md focus:ring-2 focus:ring-primary focus:bg-surface focus:outline-none transition-all disabled:opacity-60"
               placeholder="Confirme a nova senha..."
             />
           </div>
@@ -113,9 +236,10 @@ export function SettingsForm() {
         <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant">
           <button
             type="submit"
-            className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-lg text-label-lg hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm cursor-pointer"
+            disabled={isLoading || isSaving}
+            className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-lg text-label-lg hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Salvar Alterações
+            {isSaving ? "Salvando..." : "Salvar Alterações"}
           </button>
         </div>
       </form>

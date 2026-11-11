@@ -10,6 +10,9 @@ import { CategoryTable } from "./components/CategoryTable";
 import { SettingsForm } from "./components/SettingsForm";
 import { Dashboard } from "./pages/Dashboard";
 import { Login } from "./pages/Login";
+import { Users } from "./pages/Users";
+import { Ranking } from "./pages/Ranking";
+import { Reports } from "./pages/Reports";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +29,9 @@ createRoot(document.getElementById("root")!).render(
             <Route index element={<Dashboard />} />
             <Route path="perguntas" element={<QuestionTable />} />
             <Route path="categorias" element={<CategoryTable />} />
+            <Route path="usuarios" element={<Users />} />
+            <Route path="ranking" element={<Ranking />} />
+            <Route path="relatorios" element={<Reports />} />
             <Route path="configuracoes" element={<SettingsForm />} />
           </Route>
 
