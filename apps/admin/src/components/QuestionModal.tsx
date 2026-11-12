@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createQuestion,
@@ -29,61 +29,53 @@ export function QuestionModal({
   onClose,
   questionToEdit,
 }: QuestionModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <QuestionModalContent
+      key={questionToEdit?.id ?? "new"}
+      onClose={onClose}
+      questionToEdit={questionToEdit}
+    />
+  );
+}
+
+function QuestionModalContent({
+  onClose,
+  questionToEdit,
+}: Omit<QuestionModalProps, "isOpen">) {
   const queryClient = useQueryClient();
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: getCategories,
-    enabled: isOpen,
   });
 
-  const [title, setTitle] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [difficulty, setDifficulty] = useState<Difficulty>("EASY");
-  const [reference, setReference] = useState("");
-  const [explanation, setExplanation] = useState("");
-  const [xpReward, setXpReward] = useState(10);
-  const [difficultyScore, setDifficultyScore] = useState(1);
-  const [tags, setTags] = useState("");
-
-  const [alternatives, setAlternatives] = useState<AlternativeInput[]>(
-    DEFAULT_ALTERNATIVES.map((a) => ({ ...a })),
+  const [title, setTitle] = useState(questionToEdit?.title || "");
+  const [categoryId, setCategoryId] = useState(questionToEdit?.categoryId || "");
+  const [difficulty, setDifficulty] = useState<Difficulty>(
+    questionToEdit?.difficulty || "EASY",
+  );
+  const [reference, setReference] = useState(questionToEdit?.reference || "");
+  const [explanation, setExplanation] = useState(
+    questionToEdit?.explanation || "",
+  );
+  const [xpReward, setXpReward] = useState(questionToEdit?.xpReward ?? 10);
+  const [difficultyScore, setDifficultyScore] = useState(
+    questionToEdit?.difficultyScore ?? 1,
+  );
+  const [tags, setTags] = useState(
+    Array.isArray(questionToEdit?.tags) ? questionToEdit.tags.join(", ") : "",
   );
 
-  useEffect(() => {
-    if (questionToEdit) {
-      setTitle(questionToEdit.title || "");
-      setCategoryId(questionToEdit.categoryId || "");
-      setDifficulty(questionToEdit.difficulty || "EASY");
-      setReference(questionToEdit.reference || "");
-      setExplanation(questionToEdit.explanation || "");
-      setXpReward(questionToEdit.xpReward ?? 10);
-      setDifficultyScore(questionToEdit.difficultyScore ?? 1);
-      setTags(Array.isArray(questionToEdit.tags) ? questionToEdit.tags.join(", ") : "");
-      if (
-        Array.isArray(questionToEdit.alternatives) &&
-        questionToEdit.alternatives.length > 0
-      ) {
-        setAlternatives(
-          questionToEdit.alternatives.map((alt) => ({
-            description: alt.description,
-            isCorrect: alt.isCorrect,
-          })),
-        );
-      } else {
-        setAlternatives(DEFAULT_ALTERNATIVES.map((a) => ({ ...a })));
-      }
-    } else {
-      setTitle("");
-      setCategoryId("");
-      setDifficulty("EASY");
-      setReference("");
-      setExplanation("");
-      setXpReward(10);
-      setDifficultyScore(1);
-      setTags("");
-      setAlternatives(DEFAULT_ALTERNATIVES.map((a) => ({ ...a })));
-    }
-  }, [questionToEdit, isOpen]);
+  const [alternatives, setAlternatives] = useState<AlternativeInput[]>(() =>
+    Array.isArray(questionToEdit?.alternatives) &&
+    questionToEdit.alternatives.length > 0
+      ? questionToEdit.alternatives.map((alt) => ({
+          description: alt.description,
+          isCorrect: alt.isCorrect,
+        }))
+      : DEFAULT_ALTERNATIVES.map((a) => ({ ...a })),
+  );
 
   const mutation = useMutation({
     mutationFn: (payload: QuestionInput) => {
@@ -109,8 +101,6 @@ export function QuestionModal({
       );
     },
   });
-
-  if (!isOpen) return null;
 
   const handleAlternativeChange = (index: number, value: string) => {
     const newAlts = [...alternatives];

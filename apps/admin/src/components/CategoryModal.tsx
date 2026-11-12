@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createCategory,
@@ -18,16 +18,23 @@ export function CategoryModal({
   onClose,
   categoryToEdit,
 }: CategoryModalProps) {
-  const [name, setName] = useState("");
-  const queryClient = useQueryClient();
+  if (!isOpen) return null;
 
-  useEffect(() => {
-    if (categoryToEdit) {
-      setName(categoryToEdit.name);
-    } else {
-      setName("");
-    }
-  }, [categoryToEdit, isOpen]);
+  return (
+    <CategoryModalContent
+      key={categoryToEdit?.id ?? "new"}
+      onClose={onClose}
+      categoryToEdit={categoryToEdit}
+    />
+  );
+}
+
+function CategoryModalContent({
+  onClose,
+  categoryToEdit,
+}: Omit<CategoryModalProps, "isOpen">) {
+  const [name, setName] = useState(categoryToEdit?.name ?? "");
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: (data: { name: string }) => {
@@ -50,8 +57,6 @@ export function CategoryModal({
       toast.error(`Erro: ${error.message}`);
     },
   });
-
-  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

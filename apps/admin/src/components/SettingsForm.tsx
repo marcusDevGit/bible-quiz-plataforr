@@ -119,13 +119,23 @@ async function optimizeAvatarImage(file: File): Promise<string> {
   });
 }
 
+function readCachedAdminUser(): Partial<AdminUser> {
+  const cached = localStorage.getItem("admin_user");
+  if (!cached) return {};
+  try {
+    return JSON.parse(cached) as Partial<AdminUser>;
+  } catch {
+    return {};
+  }
+}
+
 export function SettingsForm() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [avatar, setAvatar] = useState("");
+  const [cachedUser] = useState<Partial<AdminUser>>(readCachedAdminUser);
+  const [draftName, setDraftName] = useState<string | null>(null);
+  const [draftAvatar, setDraftAvatar] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isProcessingImage, setIsProcessingImage] = useState(false);
@@ -135,35 +145,21 @@ export function SettingsForm() {
     text: string;
   } | null>(null);
 
-  const isDeviceImage = avatar.trim().startsWith("data:image/");
-
   const { data: meData, isLoading } = useQuery<MeResponse>({
     queryKey: ["admin-me"],
     queryFn: () => apiFetch<MeResponse>("/users/me"),
     retry: 1,
   });
 
-  useEffect(() => {
-    if (meData?.user) {
-      setName(meData.user.name || "");
-      setEmail(meData.user.email || "");
-      setAvatar(meData.user.avatar || "");
-      localStorage.setItem("admin_user", JSON.stringify(meData.user));
-      window.dispatchEvent(new Event("admin-user-updated"));
-      return;
-    }
+  const name = draftName ?? meData?.user?.name ?? cachedUser.name ?? "";
+  const email = meData?.user?.email ?? cachedUser.email ?? "";
+  const avatar = draftAvatar ?? meData?.user?.avatar ?? cachedUser.avatar ?? "";
+  const isDeviceImage = avatar.trim().startsWith("data:image/");
 
-    const cached = localStorage.getItem("admin_user");
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached) as Partial<AdminUser>;
-        if (parsed.name) setName(parsed.name);
-        if (parsed.email) setEmail(parsed.email);
-        if (parsed.avatar) setAvatar(parsed.avatar);
-      } catch {
-        // Ignora cache inválido
-      }
-    }
+  useEffect(() => {
+    if (!meData?.user) return;
+    localStorage.setItem("admin_user", JSON.stringify(meData.user));
+    window.dispatchEvent(new Event("admin-user-updated"));
   }, [meData]);
 
   const handleOpenFilePicker = () => {
@@ -180,7 +176,7 @@ export function SettingsForm() {
     try {
       setIsProcessingImage(true);
       const optimizedDataUrl = await optimizeAvatarImage(file);
-      setAvatar(optimizedDataUrl);
+      setDraftAvatar(optimizedDataUrl);
       toast.success("Imagem carregada! Clique em Salvar Alterações para aplicar.");
     } catch (error) {
       const errorMessage =
@@ -195,7 +191,7 @@ export function SettingsForm() {
   };
 
   const handleRemoveAvatar = () => {
-    setAvatar("");
+    setDraftAvatar("");
     setMessage(null);
   };
 
@@ -249,6 +245,8 @@ export function SettingsForm() {
       await queryClient.invalidateQueries({ queryKey: ["admin-me"] });
       await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
 
+      setDraftName(null);
+      setDraftAvatar(null);
       setMessage({
         type: "success",
         text: response.message || "Perfil atualizado com sucesso!",
@@ -380,7 +378,7 @@ export function SettingsForm() {
               <input
                 type="url"
                 value={isDeviceImage ? "" : avatar}
-                onChange={(e) => setAvatar(e.target.value)}
+                onChange={(e) => setDraftAvatar(e.target.value)}
                 disabled={isLoading || isSaving || isProcessingImage}
                 className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-low text-body-md focus:ring-2 focus:ring-primary focus:bg-surface focus:outline-none transition-all disabled:opacity-60"
                 placeholder={
@@ -401,7 +399,7 @@ export function SettingsForm() {
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => setDraftName(e.target.value)}
               disabled={isLoading || isSaving}
               className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface-container-low text-body-md focus:ring-2 focus:ring-primary focus:bg-surface focus:outline-none transition-all disabled:opacity-60"
               required
