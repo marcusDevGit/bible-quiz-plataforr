@@ -18,6 +18,22 @@ O projeto é estruturado como um **Monorepo** gerenciado com **Turborepo** e **n
 
 ---
 
+## 📸 Screenshots
+
+### Painel Administrativo Web (Vercel)
+
+| Visão Geral (Dashboard) | Gerenciamento de Perguntas | Gerenciamento de Categorias |
+| :---: | :---: | :---: |
+| ![Dashboard Admin](docs/screenshots/admin-dashboard.png) | ![Perguntas Admin](docs/screenshots/admin-perguntas.png) | ![Categorias Admin](docs/screenshots/admin-categorias.png) |
+
+### Aplicativo Mobile — *Sacred Wisdom* (Stitch)
+
+| Home & Modos de Jogo | Quiz em Andamento | Ranking & Pódio | Conquistas | Arena 1v1 Multiplayer |
+| :---: | :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/mobile-home.png" width="180" alt="Mobile Home" /> | <img src="docs/screenshots/mobile-quiz.png" width="180" alt="Mobile Quiz" /> | <img src="docs/screenshots/mobile-ranking.png" width="180" alt="Mobile Ranking" /> | <img src="docs/screenshots/mobile-achievements.png" width="180" alt="Mobile Achievements" /> | <img src="docs/screenshots/mobile-multiplayer.png" width="180" alt="Mobile Multiplayer" /> |
+
+---
+
 ## 🛠️ Linha do Tempo e Funcionalidades Desenvolvidas
 
 ### [x] Fase 1: Autenticação de Usuários e Dashboard Base (Admin)
@@ -64,6 +80,27 @@ O projeto é estruturado como um **Monorepo** gerenciado com **Turborepo** e **n
 - **Leaderboard Administrativo (`/ranking`):** Visualização das classificações Global, Semanal e Mensal diretamente no painel web.
 - **Relatórios de Desempenho (`/relatorios`):** Análise estatística por questão (`timesPlayed` e taxa de acerto `correctRate` atualizados automaticamente a cada partida).
 
+### [x] Fase 8: Observabilidade, Healthcheck & Tratamento Global de Erros (API)
+
+- **Rastreabilidade de Requisições:** Middleware de contexto (`requestContextMiddleware`) gerando/propagando `x-request-id` e emitindo logs estruturados em JSON com duração e status HTTP.
+- **Healthcheck Real:** Endpoint `GET /health` verificando conectividade ativa com o PostgreSQL (`SELECT 1`), latência do banco e uptime do serviço.
+- **Resiliência & Testes:** Middlewares dedicados para rotas inexistentes (`notFoundMiddleware`) e tratamento padronizado de erros (`errorMiddleware`), acompanhados de suíte de testes automatizados na API.
+
+### [x] Fase 9: Containerização com Docker & Docker Compose
+
+- **API Containerizada (`apps/api/Dockerfile`):** Build multi-stage com `node:24-bookworm-slim`, execução com usuário não-root (`node`), `HEALTHCHECK` nativo e aplicação automática de migrations (`prisma migrate deploy`) na inicialização.
+- **Admin Containerizado (`apps/admin/Dockerfile` + `nginx.conf`):** Build multi-stage do bundle Vite servido via Nginx com suporte a rotas SPA (`try_files`).
+- **Orquestração Local (`docker-compose.yml`):** Stack completa com `postgres` (PostgreSQL 16), `api` e `admin` em rede isolada com healthchecks e arquivo de exemplo `.env.docker.example`.
+
+### [x] Fase 10: CI/CD & Deploy em Produção (GitHub Actions, Render & Vercel)
+
+- **Integração Contínua (`.github/workflows/ci.yml`):** Pipeline automatizada validando build dos pacotes compartilhados (`shared-types` e `shared-validation`), `typecheck`, `eslint`, testes da API e build de produção do Admin.
+- **Entrega Contínua (`.github/workflows/cd.yml`):** Disparo automático de Deploy Hooks para **Render** e **Vercel** após aprovação da CI na branch `main`.
+- **Ambiente em Produção:**
+  - **API (Render):** [https://bible-quiz-api-cc5j.onrender.com](https://bible-quiz-api-cc5j.onrender.com) (`render.yaml`)
+  - **Painel Admin (Vercel):** [https://bible-quiz-admin.vercel.app](https://bible-quiz-admin.vercel.app) (`apps/admin/vercel.json`)
+  - **Banco de Dados:** PostgreSQL gerenciado no **Neon**
+
 ---
 
 ## 🎨 Design System: Sacred Wisdom
@@ -102,7 +139,7 @@ Toda a identidade visual da plataforma mobile foi baseada nas especificações d
      ```
    - Em `apps/admin/`, crie o arquivo `.env`:
      ```env
-     VITE_API_URL="http://localhost:3001"
+     VITE_BASE_URL="http://localhost:3001"
      ```
    - Em `apps/mobile/`, crie o arquivo `.env`:
      ```env
@@ -116,3 +153,16 @@ Toda a identidade visual da plataforma mobile foi baseada nas especificações d
    npx prisma db seed
    cd ../..
    ```
+4. **Executar em Desenvolvimento:**
+   ```bash
+   npm run dev
+   ```
+
+### Execução com Docker (Opcional)
+
+Para subir PostgreSQL, API e Painel Admin em containers:
+
+```bash
+cp .env.docker.example .env.docker
+docker compose up -d --build
+```
